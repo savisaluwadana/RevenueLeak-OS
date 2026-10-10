@@ -6,15 +6,17 @@ permissions:
   contents: read
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Go format check
+        run: test -z "$(gofmt -l .)"
       - run: go vet ./...
       - run: go test -race ./...
-      - run: go build ./cmd/server
+      - run: go build -o "$RUNNER_TEMP/revenueleak" ./cmd/server
       - name: Smoke test executable demo launcher
         run: |
           set -euo pipefail
@@ -29,3 +31,24 @@ jobs:
           done
           echo "Demo launcher did not become healthy"
           exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Browser JavaScript syntax
+        run: node --check web/app.js
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Browser user-flow smoke test
+        env:
+          REVENUELEAK_TEST_BINARY: ${{ runner.temp }}/revenueleak
+        run: npm run test:browser
+  container:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build standalone image
+        run: docker build -t revenueleak:ci .
+      - name: Validate Compose configuration
+        run: |
+          cp .env.example .env
+          docker compose config >/dev/null

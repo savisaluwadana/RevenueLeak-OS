@@ -119,6 +119,9 @@ func (s *Server) Router() http.Handler {
 	mux.HandleFunc("POST /api/logout", s.logout)
 	mux.HandleFunc("GET /api/overview", s.overview)
 	mux.HandleFunc("GET /api/findings", s.findings)
+	mux.HandleFunc("GET /api/scans", s.scanRuns)
+	mux.HandleFunc("GET /api/scans/{id}", s.scanRun)
+	mux.HandleFunc("GET /api/scans/{id}/export", s.exportScanRun)
 	mux.HandleFunc("GET /api/findings/export", s.export)
 	mux.HandleFunc("POST /api/findings/{id}/status", s.updateFinding)
 	mux.HandleFunc("GET /api/datasets", s.datasets)
@@ -159,7 +162,7 @@ func (s *Server) me(w http.ResponseWriter, r *http.Request) {
 			return s.csrf(r)
 		}
 		return ""
-	}(), "stripe_configured": os.Getenv("STRIPE_RESTRICTED_KEY") != "" && os.Getenv("STRIPE_PRICE_MAP") != "", "version": "0.1.0"})
+	}(), "stripe_configured": os.Getenv("STRIPE_RESTRICTED_KEY") != "" && os.Getenv("STRIPE_PRICE_MAP") != "", "version": "0.2.0"})
 }
 func (s *Server) limitLogin(r *http.Request) bool {
 	ip := r.RemoteAddr
@@ -273,7 +276,7 @@ func (s *Server) audit(w http.ResponseWriter, r *http.Request) {
 func (s *Server) scan(w http.ResponseWriter, r *http.Request) {
 	var summary core.ScanSummary
 	err := s.Store.Update(func(d *core.Database) error {
-		summary = core.Scan(d, time.Now(), 7)
+		summary = core.RunScan(d, time.Now(), 7, "manual")
 		core.Log(d, "scan.complete", fmt.Sprintf("%d findings identified", summary.Findings))
 		return nil
 	})
@@ -309,7 +312,7 @@ func (s *Server) importCSV(w http.ResponseWriter, r *http.Request) {
 	var result core.ImportResult
 	err = s.Store.Update(func(d *core.Database) error {
 		result = core.Import(d, kind, parsed)
-		core.Scan(d, time.Now(), 7)
+		core.RunScan(d, time.Now(), 7, "import."+kind)
 		core.Log(d, "import."+kind, fmt.Sprintf("%d added, %d updated", result.Added, result.Updated))
 		return nil
 	})
@@ -341,6 +344,7 @@ func (s *Server) updateFinding(w http.ResponseWriter, r *http.Request) {
 			if d.Findings[i].ID == id {
 				d.Findings[i].Status = req.Status
 				d.Findings[i].Note = req.Note
+				d.Findings[i].ReviewRequiredReason = ""
 				result = d.Findings[i]
 				core.Log(d, "finding.status", id+" -> "+req.Status)
 				return nil
@@ -382,7 +386,7 @@ func (s *Server) stripeSync(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		d.Billing = append(kept, result.Records...)
-		core.Scan(d, time.Now(), 7)
+		core.RunScan(d, time.Now(), 7, "stripe.sync")
 		core.Log(d, "stripe.sync", fmt.Sprintf("%d invoices, %d mapped lines, %d skipped unmapped", result.Invoices, result.Lines, result.SkippedUnmapped))
 		return nil
 	})

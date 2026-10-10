@@ -41,29 +41,31 @@ type Credit struct {
 	Reason      string `json:"reason"`
 }
 type Finding struct {
-	ID                  string   `json:"id"`
-	CustomerID          string   `json:"customer_id"`
-	CustomerName        string   `json:"customer_name"`
-	Period              string   `json:"period"`
-	Metric              string   `json:"metric"`
-	Kind                string   `json:"kind"`
-	Currency            string   `json:"currency"`
-	PotentialCents      int64    `json:"potential_cents"`
-	ExpectedCents       int64    `json:"expected_cents"`
-	BilledCents         int64    `json:"billed_cents"`
-	CreditedCents       int64    `json:"credited_cents"`
-	UsageUnits          int64    `json:"usage_units"`
-	BilledUnits         int64    `json:"billed_units"`
-	IncludedUnits       int64    `json:"included_units"`
-	UnitPriceCents      int64    `json:"unit_price_cents"`
-	MonthlyMinimumCents int64    `json:"monthly_minimum_cents"`
-	EvidenceUsageIDs    []string `json:"evidence_usage_ids"`
-	EvidenceInvoiceIDs  []string `json:"evidence_invoice_ids"`
-	Explanation         string   `json:"explanation"`
-	Status              string   `json:"status"`
-	Note                string   `json:"note"`
-	FirstSeen           string   `json:"first_seen"`
-	LastSeen            string   `json:"last_seen"`
+	ID                   string   `json:"id"`
+	CustomerID           string   `json:"customer_id"`
+	CustomerName         string   `json:"customer_name"`
+	Period               string   `json:"period"`
+	Metric               string   `json:"metric"`
+	Kind                 string   `json:"kind"`
+	Currency             string   `json:"currency"`
+	PotentialCents       int64    `json:"potential_cents"`
+	ExpectedCents        int64    `json:"expected_cents"`
+	BilledCents          int64    `json:"billed_cents"`
+	CreditedCents        int64    `json:"credited_cents"`
+	UsageUnits           int64    `json:"usage_units"`
+	BilledUnits          int64    `json:"billed_units"`
+	IncludedUnits        int64    `json:"included_units"`
+	UnitPriceCents       int64    `json:"unit_price_cents"`
+	MonthlyMinimumCents  int64    `json:"monthly_minimum_cents"`
+	EvidenceUsageIDs     []string `json:"evidence_usage_ids"`
+	EvidenceInvoiceIDs   []string `json:"evidence_invoice_ids"`
+	Explanation          string   `json:"explanation"`
+	Status               string   `json:"status"`
+	Note                 string   `json:"note"`
+	FirstSeen            string   `json:"first_seen"`
+	LastSeen             string   `json:"last_seen"`
+	EvidenceDigest       string   `json:"evidence_digest"`
+	ReviewRequiredReason string   `json:"review_required_reason,omitempty"`
 }
 type AuditEvent struct {
 	ID     string `json:"id"`
@@ -72,6 +74,7 @@ type AuditEvent struct {
 	Detail string `json:"detail"`
 }
 type ScanSummary struct {
+	RunID              string `json:"run_id,omitempty"`
 	At                 string `json:"at"`
 	EligiblePairs      int    `json:"eligible_pairs"`
 	SkippedOpenPeriods int    `json:"skipped_open_periods"`
@@ -79,16 +82,19 @@ type ScanSummary struct {
 	SkippedCurrencies  int    `json:"skipped_currencies"`
 	SkippedOverflow    int    `json:"skipped_overflow"`
 	Findings           int    `json:"findings"`
+	ReopenedFindings   int    `json:"reopened_findings"`
 }
 type Database struct {
-	Contracts []Contract   `json:"contracts"`
-	Usage     []Usage      `json:"usage"`
-	Billing   []Billing    `json:"billing"`
-	Credits   []Credit     `json:"credits"`
-	Findings  []Finding    `json:"findings"`
-	Audit     []AuditEvent `json:"audit"`
-	LastScan  ScanSummary  `json:"last_scan"`
-	UpdatedAt string       `json:"updated_at"`
+	Contracts    []Contract   `json:"contracts"`
+	Usage        []Usage      `json:"usage"`
+	Billing      []Billing    `json:"billing"`
+	Credits      []Credit     `json:"credits"`
+	Findings     []Finding    `json:"findings"`
+	Audit        []AuditEvent `json:"audit"`
+	LastScan     ScanSummary  `json:"last_scan"`
+	UpdatedAt    string       `json:"updated_at"`
+	ScanRuns     []ScanRun    `json:"scan_runs"`
+	ScanSequence int64        `json:"scan_sequence"`
 }
 
 func NewDatabase() Database {

@@ -2,7 +2,7 @@
 
 ## Scope
 
-RevenueLeak OS v0.1 is a **single-workspace, local or private-hosted SaaS revenue reconciliation pilot**. The business problem is underbilling and lost billable usage. The engineering priority is repeatable math, source traceability and explicit human review rather than an autonomous AI collection agent.
+RevenueLeak OS v0.2 is a **single-workspace, local or private-hosted SaaS revenue reconciliation pilot**. The business problem is underbilling and lost billable usage. The engineering priority is repeatable math, source traceability and explicit human review rather than an autonomous AI collection agent.
 
 ## Data flow
 
@@ -38,7 +38,7 @@ The browser provides the dashboard and upload/review forms, communicating only w
 - The applicable contract version is the latest effective start month covering the period. Contract validity is monthly, not daily.
 - The expected charge is `max(0, usage-included) * unit_rate`, floored by the minimum commitment and reduced by explicit credits.
 - A finding is generated **only if expected exceeds finalized billed amount**. Draft and void invoices are disregarded. Negative and foreign-currency invoice lines are skipped at import, and currency mismatches cause the comparison to be skipped.
-- Finding IDs are deterministic by customer/month/metric. Existing statuses and notes survive rescans of the same tuple.
+- Finding IDs are deterministic by customer/month/metric. Statuses survive only when that case's evidence fingerprint is unchanged. Changed evidence reopens reviewed cases; notes and first-seen timestamps remain.
 - Evidence includes stable source record IDs and numerical inputs used for the comparison. A finding status change cannot modify financial source data.
 - Corrections and monetary recoveries happen entirely outside this application. Review does not mean invoicing or collecting.
 
@@ -46,7 +46,7 @@ The browser provides the dashboard and upload/review forms, communicating only w
 
 Each user action is modeled as a copy-on-write transaction under a process-local mutex. Data is saved as JSON to a `0600` temporary file, synced and atomically renamed into place before becoming the active in-memory snapshot. This supports process restarts, single-instance pilots and prevents partial file content under normal operating conditions. The filesystem must support atomic renames and persistent writable storage.
 
-This approach is **not** multi-process-safe, does not implement a transaction log, cannot support simultaneous pods or efficient history snapshots, and does not replace PostgreSQL for a multi-tenant production service.
+This approach is **not** multi-process-safe, does not implement a transaction log, cannot support simultaneous pods or efficiently query large histories, and does not replace PostgreSQL for a multi-tenant production service.
 
 ### Auth and trust boundaries
 
@@ -61,3 +61,11 @@ The engine categorizes a positive variance as missing invoice, unbilled usage, m
 In phase 2, replace the single-file store with PostgreSQL tables for organizations, users, memberships, connector configurations, versioned contracts, source records, ingest jobs, reconciliation runs, findings, evidence references and append-only audits. Add a queue for idempotent source ingestion, signed provider webhooks, tenant-based database RLS or strict repository filters, OAuth/KMS-backed credential storage, rate limits, structured tracing and periodic snapshot reconciliation.
 
 See `ROADMAP.md` for the concrete engineering and go-to-market sequence.
+
+## Saved run transaction
+
+Runtime paths use `core.RunScan` inside `Store.Update`. Source mutation, reconciliation, current finding changes, sequence increment and the saved run are committed atomically. An error leaves both the live data and run history unchanged. Each run owns copied source and finding slices. Import edits and later review edits cannot mutate a saved snapshot. The store upgrades older JSON files with an empty history; it does not invent historical evidence.
+
+Runs contain all input contracts, usage, billing and credits, the result summary and findings, a rule version, trigger, source digest and sequence-based ID. The latest 25 runs are kept newest first. Run IDs are unique during that workspace's lifetime, but a destructive demo reset begins a new workspace history. Case fingerprints normalize record order by stable IDs so a row reorder does not invalidate review. An evidence fingerprint is an ordinary hash, not a digital signature.
+
+`GET /api/scans` returns summaries only. Detail and export endpoints require the same authenticated session as other private APIs and send `Cache-Control: no-store`. Source snapshots exclude environment credentials and sessions but retain customer/financial data. See RECONCILIATION-RUNS.md for retention and API.md for contracts.

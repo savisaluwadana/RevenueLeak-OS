@@ -18,7 +18,7 @@
 4. Audit events are mutable alongside the data store, not an externally secured append-only log.
 5. Session cookies are marked `Secure` when the Go app directly terminates TLS. With TLS offload, ensure HTTPS enforcement at the proxy and cookie security validation before exposing externally.
 6. CSP permits inline *styles* to support dynamic chart rendering; scripts remain same-origin only.
-7. There is no formal privacy/consent workflow, data retention policy, automated backup/restore or tested disaster recovery.
+7. Saved runs have a fixed 25-run retention cap, but there is no organization-specific privacy/consent policy, configurable retention, automated backup/restore or tested disaster recovery.
 8. No vulnerability scanner or independent penetration test has been performed.
 9. Connector synchronization may be slow on large Stripe accounts; do not run concurrent full sync jobs in a production shared instance.
 10. Billing correctness depends on complete and trusted source mappings. An underbilled finding is not a payable invoice.
@@ -39,3 +39,7 @@
 ## Reporting vulnerabilities
 
 Please do not test this pilot against third-party customer billing data or a public production system without permission. Report security findings through a private channel to the application owner. Do not include credentials or sensitive customer data in public issues.
+
+## Run evidence and retention
+
+Saved runs duplicate customer contracts and financial inputs in the private JSON store. The latest 25 scans are retained; older runs are pruned during successful scans. A demo reset clears all workspace data and history. Backups and exported JSON files are separate copies and require their own retention/deletion controls. Do not commit them or attach real customer exports to public GitHub issues. Hashes are not signatures and do not prevent a filesystem administrator from rewriting evidence.

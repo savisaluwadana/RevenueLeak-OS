@@ -2,7 +2,7 @@
 
 **A runnable, evidence-first SaaS revenue assurance pilot.** Reconcile independent usage, customer contract terms, approved credits, and finalized billing lines to identify *potential* underbilling. Designed for controlled finance investigation—not automatic debt collection.
 
-![Status](https://img.shields.io/badge/release-0.1.0_pilot-green)
+![Status](https://img.shields.io/badge/release-0.2.0_pilot-green)
 
 ## Standalone repository
 
@@ -27,6 +27,14 @@ go run ./cmd/server
 ```
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
+
+## Saved reconciliation runs (v0.2)
+
+Every manual scan, CSV import, Stripe sync and demo seed now saves its inputs, calculated findings, rule version and SHA-256 input fingerprint in the same datastore transaction. Open **Saved runs → Inspect** to review an earlier result or download an evidence JSON bundle. The latest **25 runs** are retained; export important runs before they expire. A later source correction or review edit does not rewrite an earlier run. Scans that produce no findings are saved too.
+
+Reviewed cases reopen as **New** if their source evidence changes. Earlier notes and first-seen timestamps remain. Unchanged evidence preserves the current status. Legacy cases without an evidence fingerprint require review again on the first rescan if they already had a reviewed outcome.
+
+Evidence downloads include customer contracts, usage, invoices and credits. Protect them like the source records. Fingerprints identify inputs; they do not establish accuracy or make the file store tamper-evident. Snapshot results record the status **at scan time**, not the latest review outcome. See [run-history behavior](docs/RECONCILIATION-RUNS.md), [API](docs/API.md) and [development guide](docs/DEVELOPMENT.md).
 
 ## What is implemented
 
@@ -82,6 +90,8 @@ Stripe API background: [Invoices](https://docs.stripe.com/api/invoices), [Invoic
 | POST | `/api/login`, `/api/logout` | Admin session |
 | GET | `/api/overview`, `/api/findings` | Portfolio and investigations |
 | GET | `/api/datasets`, `/api/audit` | Imported source records and audit entries |
+| GET | `/api/scans`, `/api/scans/{id}` | Saved run summaries and evidence snapshot |
+| GET | `/api/scans/{id}/export` | Download saved evidence JSON |
 | GET | `/api/findings/export` | CSV export (spreadsheet formula-safe) |
 | POST | `/api/import/{contracts,usage,billing,credits}` | Multipart CSV; `file` field |
 | POST | `/api/scan` | Reconcile eligible periods |
@@ -109,5 +119,5 @@ The app uses **only the Go standard library** for the backend and browser-native
 - Complete independent usage and invoice imports are prerequisites. Missing usage, unmapped invoices, open/draft billing periods, credits, discount behaviors or unmodeled contracts may produce false positives or missed revenue.
 - Scans cover only customer/metric/month tuples present in a usage or paid/open billing record. A minimum commitment with *no* usage or billing record for that month will not be flagged.
 - The Stripe connector only imports explicitly mapped monthly invoice lines (max 2000 invoices and 2000 lines per invoice per sync), not full billing-system state; there is no live meter-event ingestion or contract parser.
-- Historical findings get recomputed from the current source snapshot; stale vanished findings are not preserved in a separate closed history table. Audit logs record actions but aren't tamper-evident.
+- The live findings list is recomputed from current inputs. Earlier findings remain in the latest 25 saved run snapshots; this is bounded history, not an indefinitely retained case ledger. Audit logs and snapshots are not tamper-evident.
 - This software has not been independently penetration-tested, load-tested, or externally security-certified. Use synthetic data until your privacy, security and accounting requirements are reviewed.
