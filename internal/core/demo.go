@@ -51,5 +51,5 @@ func SeedDemo(d *Database, now time.Time) {
 		}
 	}
 	Log(d, "demo.seed", "Synthetic demo dataset inserted; no real customer data")
-	Scan(d, now, 7)
+	RunScan(d, now, 7, "demo.seed")
 }

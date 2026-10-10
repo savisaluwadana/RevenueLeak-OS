@@ -8,7 +8,7 @@
 
 **Value hypothesis:** a finance team would pay for defensible findings that recover more than the annual cost, reduce manual reconciliation time, and avoid disputed charges. This hypothesis needs direct customer validation; pricing at $1,500–$4,000/month is an assumption, not demonstrated traction.
 
-## Current release: v0.1 working pilot
+## Current release: v0.2 working pilot
 
 - [x] Go backend, self-hosted UI, login, security headers and signed session.
 - [x] Normalized contracts, usage, billing, credits with CSV ingestion and validation.
@@ -16,6 +16,9 @@
 - [x] Dashboard, investigations, connector setup, audit log, CSV export and sample records.
 - [x] Optional read-only Stripe finalized invoice pull with explicit price mapping.
 - [x] Local persistence, Docker packaging, unit/API tests, technical docs.
+- [x] Standalone repository, root-level CI, executable launcher and migration notes.
+- [x] Saved run inputs/results, evidence JSON exports, 25-run retention and history UI.
+- [x] Evidence changes reopen reviewed cases; regression tests cover restart, rollback and snapshot stability.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.
 
 ## Phase 1: first paid pilot
@@ -34,7 +37,7 @@
 - PostgreSQL transactional persistence, migrations, backups and tested restore procedure.
 - Encrypted connector credentials with KMS, rotation and OAuth wherever supported.
 - Asynchronous queues, retry/DLQ, idempotency checks, provider webhook signing and source-level checkpointing.
-- Immutable reconciliation-run snapshots, reproducible deterministic calculations and tamper-evident approvals.
+- Scale the pilot's saved run snapshots into relational, versioned reconciliation records with configurable retention, replay verification and tamper-evident approvals.
 - Data minimization, PII policy, contractual consent and retention/deletion workflows.
 - Monitoring (OTel), alerting, structured logs, audit export, rate limits and security audit.
 - Customer-to-provider ID mapping and robust provider adjustments, credit notes, taxes and invoice-level discounts.
@@ -59,3 +62,13 @@
 ## Important exclusions from current implementation
 
 This release cannot accurately reconcile graduated tiering, minimums shared across metrics, annual prepayments, multiple currencies within a contract, write-offs, tax, refunds, disputed payments, or delayed/eventually consistent metering without a reviewed data model. Claims of "no bugs", enterprise readiness, or guaranteed recovered revenue would be premature.
+
+## Next engineering milestone
+
+1. Introduce a repository interface and PostgreSQL-backed transactional persistence with versioned migrations; retain the local demo adapter.
+2. Add organizations, identities and memberships before exposing multiple customer workspaces.
+3. Verify OIDC login, refresh/logout and per-role access across every import, run, finding and export route.
+4. Move connector ingestion into durable jobs with checkpoints, concurrency limits and retries.
+5. Add reviewed contract fixtures for tiering and source completeness before expanding monetary rules.
+
+Current saved runs are a pilot foundation, not completion of the production foundation phase. Built-in SSO, PostgreSQL, tenant isolation, live customer integration and production certification remain unimplemented.

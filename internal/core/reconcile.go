@@ -61,6 +61,8 @@ type aggregate struct {
 	usage, billedUnits, billed, credits int64
 	uIDs, invoiceIDs                    []string
 	currencyMismatch, overflow          bool
+	usageRecords                        []Usage
+	creditRecords                       []Credit
 }
 
 func (a *aggregate) add(field *int64, amount int64) {
@@ -85,6 +87,7 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 		a := get(pair{u.CustomerID, u.Period, u.Metric})
 		a.add(&a.usage, u.Quantity)
 		a.uIDs = append(a.uIDs, u.ID)
+		a.usageRecords = append(a.usageRecords, u)
 	}
 	for _, b := range d.Billing {
 		if b.Status != "paid" && b.Status != "open" {
@@ -106,6 +109,7 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 		k := pair{cr.CustomerID, cr.Period, cr.Metric}
 		if a, ok := byPair[k]; ok {
 			a.add(&a.credits, cr.AmountCents)
+			a.creditRecords = append(a.creditRecords, cr)
 		}
 	}
 	keys := make([]pair, 0, len(byPair))
@@ -178,10 +182,17 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 		}
 		f := Finding{ID: findingID(k), CustomerID: k.customer, CustomerName: c.CustomerName, Period: k.period, Metric: k.metric, Kind: kind, Currency: strings.ToUpper(c.Currency), PotentialCents: gap, ExpectedCents: expected, BilledCents: a.billed, CreditedCents: a.credits, UsageUnits: a.usage, BilledUnits: a.billedUnits, IncludedUnits: c.IncludedUnits, UnitPriceCents: c.UnitPriceCents, MonthlyMinimumCents: c.MonthlyMinimumCents, EvidenceUsageIDs: unique(a.uIDs), EvidenceInvoiceIDs: unique(a.invoiceIDs), Status: "new", FirstSeen: summary.At, LastSeen: summary.At}
 		f.Explanation = fmt.Sprintf("%s: %d recorded %s units (%d included); expected %d %s cents after %d cents in explicit credits, versus %d cents on finalized invoices. Review contract terms, invoice period, discounts, and source completeness before attempting recovery.", c.CustomerName, a.usage, k.metric, c.IncludedUnits, expected, f.Currency, a.credits, a.billed)
+		f.EvidenceDigest = findingEvidenceDigest(c, a.usageRecords, billingByPair[k], a.creditRecords)
 		if old, ok := previous[f.ID]; ok {
 			f.Status = old.Status
 			f.Note = old.Note
 			f.FirstSeen = old.FirstSeen
+			f.ReviewRequiredReason = old.ReviewRequiredReason
+			if old.EvidenceDigest != f.EvidenceDigest && old.Status != "new" {
+				f.Status = "new"
+				f.ReviewRequiredReason = "Source evidence changed or has no prior fingerprint. Review the earlier outcome again."
+				summary.ReopenedFindings++
+			}
 		}
 		findings = append(findings, f)
 	}

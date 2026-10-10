@@ -41,6 +41,9 @@ func Open(path string) (*Store, error) {
 	if s.data.Findings == nil {
 		s.data.Findings = []Finding{}
 	}
+	if s.data.ScanRuns == nil {
+		s.data.ScanRuns = []ScanRun{}
+	}
 	if s.data.Audit == nil {
 		s.data.Audit = []AuditEvent{}
 	}

@@ -6,3 +6,7 @@
 /revenueleak
 .DS_Store
 .coverage
+
+/node_modules/
+/test-results/
+/playwright-report/
