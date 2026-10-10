@@ -1,0 +1,2 @@
+line_id,invoice_id,customer_id,period,metric,quantity,amount_cents,currency,status
+line-acme-2026-08,in_acme_2026_08,cus_acme,2026-08,api_calls,2000,10000,USD,paid

@@ -1,0 +1,2 @@
+customer_id,customer_name,metric,currency,unit_price_cents,included_units,monthly_minimum_cents,effective_from,effective_to
+cus_acme,Acme SaaS,api_calls,USD,5,1000,5000,2026-01,

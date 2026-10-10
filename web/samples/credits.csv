@@ -1,0 +1,2 @@
+credit_id,customer_id,period,metric,amount_cents,reason
+credit-acme-2026-08,cus_acme,2026-08,api_calls,1000,Approved service credit

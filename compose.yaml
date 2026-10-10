@@ -1,0 +1,21 @@
+services:
+  revenueleak:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    environment:
+      ADDR: 0.0.0.0:8080
+      DATA_FILE: /app/data/revenueleak.json
+      WEB_DIR: /app/web
+    volumes:
+      - revenueleak_data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+volumes:
+  revenueleak_data:

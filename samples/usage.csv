@@ -1,0 +1,2 @@
+usage_id,customer_id,period,metric,quantity
+usage-acme-2026-08,cus_acme,2026-08,api_calls,3500
