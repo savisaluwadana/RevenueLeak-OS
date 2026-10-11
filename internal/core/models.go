@@ -100,6 +100,6 @@ type Database struct {
 }
 
 func NewDatabase() Database {
-	return Database{Contracts: []Contract{}, Usage: []Usage{}, Billing: []Billing{}, Credits: []Credit{}, Findings: []Finding{}, Audit: []AuditEvent{}}
+	return Database{Contracts: []Contract{}, Usage: []Usage{}, Billing: []Billing{}, Credits: []Credit{}, Findings: []Finding{}, Coverage: []CoverageGap{}, Audit: []AuditEvent{}}
 }
 func Stamp() string { return time.Now().UTC().Format(time.RFC3339) }
