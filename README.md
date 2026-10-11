@@ -8,13 +8,13 @@
 
 The application now lives at [savisaluwadana/RevenueLeak-OS](https://github.com/savisaluwadana/RevenueLeak-OS). See [migration notes](docs/MIGRATION.md), [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), and [security](SECURITY.md).
 
-## Quick start (no dependencies beyond Go 1.23)
+## Quick start (Go 1.23+, PostgreSQL not required for demo)
 
 ```bash
 DEMO_MODE=true go run ./cmd/server
 ```
 
-Open **http://127.0.0.1:8080**. The default demo binds to localhost, seeds synthetic customers, and works without credentials or network access. Sample CSV files are available from the Data sources page. Data persists in `./data/revenueleak.json`; the **Settings → Reset demo data** button restores the sample dataset.
+Open **http://127.0.0.1:8080**. The default demo binds to localhost, seeds synthetic customers, and works without external credentials or network services after Go dependencies have been installed. Sample CSV files are available from the Data sources page. Data persists in `./data/revenueleak.json`; the **Settings → Reset demo data** button restores the sample dataset.
 
 ### Private workspace
 
@@ -28,11 +28,17 @@ go run ./cmd/server
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
 
+## Optional PostgreSQL-backed private workspace (experimental)
+
+The Go server can now use PostgreSQL for **one provisioned, authenticated private workspace** when `DATABASE_URL` and `WORKSPACE_ID` are provided. The JSON demo remains the default, and Stripe remains optional. This uses a transactionally updated, tenant-scoped JSONB workspace document while the long-term normalized relational repository is still being developed. See [PostgreSQL setup](docs/POSTGRESQL-FOUNDATION.md) for migration, runtime role, org provisioning and testing instructions.
+
+**Not production multi-tenancy:** the application still has only one admin password per running server and no OIDC, organization membership authorization, RBAC or routed multi-company sessions. Do not expose multiple unrelated customer organizations behind a shared HTTP instance. Migration from existing JSON pilot data is not automatic.
+
 ## PostgreSQL tenant schema (development foundation only)
 
-The repository now contains a versioned PostgreSQL schema, a checksum-verified migration runner, and CI tests for row-level security and cross-tenant foreign keys. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
+The repository contains a versioned PostgreSQL schema, a checksum-verified migration runner, and CI tests for row-level security, cross-tenant foreign keys and an opt-in private PostgreSQL repository. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
 
-**The running server still uses the local JSON workspace.** The PostgreSQL schema has not been integrated with the Go API, identities, or customer accounts. Do not treat it as production multi-tenancy or migrate real customer data to it yet.
+**The default server uses the local JSON workspace.** Opt-in PostgreSQL mode persists a single private workspace; multi-user identity, RBAC and production tenant authorization remain unimplemented.
 
 ## Canonical customer ID mappings (pilot feature)
 
@@ -63,7 +69,7 @@ Evidence downloads include customer contracts, usage, invoices and credits. Prot
 ## What is implemented
 
 - Fully functioning web dashboard: currency-separated portfolio KPIs, billing-period impact, leak categories, searchable and filterable investigations, source uploads, export, activity log, setup and demo reset.
-- Go standard-library JSON API, session login, signed HttpOnly cookies, CSRF enforcement, bounded upload sizes, security headers and rate limiting for sign-in.
+- Go JSON API with one pinned PostgreSQL driver dependency, session login, signed HttpOnly cookies, CSRF enforcement, bounded upload sizes, security headers and rate limiting for sign-in.
 - Four validated financial CSV sources: effective-dated rate cards, independently metered usage, finalized invoice lines and explicit service credits. A fifth optional customer-ID mapping CSV aligns external provider identifiers to canonical contract customers. Imports are keyed/upserted (retries do not duplicate the same ID).
 - Deterministic reconciliation, supporting unit prices, included units, monthly minimums, paid/open invoice totals and explicit credits. It skips unfinished months (7-day grace), missing contracts, currency conflicts, draft/void invoices.
 - Evidence in each finding: source IDs, billed/expected minor currency units, explanation and editable investigation status/notes. Human approval is mandatory for recovery actions.
@@ -133,7 +139,7 @@ go vet ./...
 go build -o revenueleak ./cmd/server
 ```
 
-The app uses **only the Go standard library** for the backend and browser-native JavaScript/CSS for the UI—no package installation required. The default filesystem datastore is sufficient for a single-workspace pilot, but production multi-tenant use requires a relational database, encrypted credential vault, RBAC, stronger job infrastructure and an independent security review. See [architecture](docs/ARCHITECTURE.md), [security](SECURITY.md), and [roadmap](docs/ROADMAP.md).
+The backend uses the Go standard library plus a pinned, MIT-licensed PostgreSQL driver; the UI uses browser-native JavaScript/CSS. The local demo does not require a PostgreSQL service, but Go modules must be downloaded on first build. The default filesystem datastore is sufficient for a single-workspace pilot, but production multi-tenant use requires a relational database, encrypted credential vault, RBAC, stronger job infrastructure and an independent security review. See [architecture](docs/ARCHITECTURE.md), [security](SECURITY.md), and [roadmap](docs/ROADMAP.md).
 
 ## Limitations
 

@@ -41,3 +41,7 @@ Import `mappings` with a CSV containing `source,external_customer_id,customer_id
 `GET /api/datasets` includes the `mappings` array. Saved run inputs include a snapshot of mappings; the source fingerprint includes mapping changes. Raw usage, credits and invoice source records keep their external IDs. Unknown billing sources (including synthetic demo data) cannot inherit CSV aliases. Imports are authenticated and CSRF-protected.
 
 **Accuracy warning:** Explicit mappings are asserted by the importing operator, not inferred or verified by the software. Many-to-one mappings can legitimately combine multiple billing customers but require independent finance verification to avoid duplicate billing totals. Full ingestion checks, provider customer-identity attestation, and tenant-level access policies remain production work.
+
+## Storage backends
+
+The HTTP API contract is unchanged. The default server is the local JSON pilot. Opt-in PostgreSQL mode (`DATABASE_URL` plus `WORKSPACE_ID`, `DEMO_MODE=false`, strong `ADMIN_PASSWORD` and independent `SESSION_SECRET`) stores **one private organization's** pilot snapshot in the transactionally updated `revenueleak.workspace_documents` table. It is not an OIDC multi-user SaaS API and does not authorize access to different organizations per HTTP session. Read failures return HTTP 500 instead of artificial empty results; saved-run reads distinguish database failure (500) from missing/expired history (404). See [PostgreSQL setup](POSTGRESQL-FOUNDATION.md).

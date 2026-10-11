@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"revenueleak-os/internal/core"
+	"revenueleak-os/internal/pgstore"
 	"revenueleak-os/internal/server"
 )
 
@@ -36,14 +37,33 @@ func main() {
 	if webDir == "" {
 		webDir = "./web"
 	}
-	store, err := core.Open(dataPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if demo && len(store.Snapshot().Contracts) == 0 {
-		if err = store.Update(func(d *core.Database) error { core.SeedDemo(d, time.Now()); return nil }); err != nil {
+	var store core.Repository
+	storageMode := "json"
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		if demo {
+			log.Fatal("DEMO_MODE cannot be enabled with PostgreSQL; use the localhost JSON demo")
+		}
+		if len(os.Getenv("SESSION_SECRET")) < 32 {
+			log.Fatal("SESSION_SECRET must be set to an independent secret of at least 32 characters for PostgreSQL")
+		}
+		pg, err := pgstore.Open(dsn, os.Getenv("WORKSPACE_ID"))
+		if err != nil {
+			log.Fatalf("PostgreSQL workspace unavailable: %v", err)
+		}
+		defer pg.Close()
+		store = pg
+		storageMode = "postgres-private"
+	} else {
+		local, err := core.Open(dataPath)
+		if err != nil {
 			log.Fatal(err)
 		}
+		if demo && len(local.Snapshot().Contracts) == 0 {
+			if err = local.Update(func(d *core.Database) error { core.SeedDemo(d, time.Now()); return nil }); err != nil {
+				log.Fatal(err)
+			}
+		}
+		store = local
 	}
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -59,7 +79,7 @@ func main() {
 		log.Printf("automatic reconciliation enabled: interval=%s, grace=7d", interval)
 	}
 	srv := server.New(store, password, demo, webDir)
-	log.Printf("RevenueLeak OS %s: demo=%v stripe=%v", addr, demo, os.Getenv("STRIPE_RESTRICTED_KEY") != "")
+	log.Printf("RevenueLeak OS %s: storage=%s demo=%v stripe=%v", addr, storageMode, demo, os.Getenv("STRIPE_RESTRICTED_KEY") != "")
 	httpServer := &http.Server{Addr: addr, Handler: srv.Router(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 65 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	go func() {
 		<-shutdownCtx.Done()

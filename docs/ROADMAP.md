@@ -24,7 +24,9 @@
 - [x] Source-scoped CSV customer identity mapping for billing, usage and credits, with saved source provenance and regression tests.
 - [x] PostgreSQL 16 tenant schema, migration checksum ledger, enforced RLS policies and cross-tenant SQL tests (schema only, not wired to the Go API).
 - [x] Correct scheduled-scan fingerprint to include customer ID mapping changes.
-- [x] Error-returning repository boundary for reads/writes, with server and scheduler failure-injection tests; PostgreSQL runtime adapter is next.
+- [x] Error-returning repository boundary for reads/writes, with server and scheduler failure-injection tests; PostgreSQL runtime adapter follows.
+- [x] Experimental PostgreSQL JSONB workspace adapter with RLS, transactional updates, startup role checks and two-workspace integration tests.
+- [ ] Production-normalized relational read/write paths, OIDC membership authorization, data migration and backup/restore drills.
 - [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
 - [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.
@@ -42,7 +44,7 @@
 ## Phase 2: production foundation
 
 - Organizations/users, SSO/OIDC, RBAC and segregated tenancy.
-- PostgreSQL transactional persistence **still missing**; SQL schema/migration runner and disposable DB tenant-isolation CI checks are implemented, but the Go API, backup and restore are not migrated.
+- PostgreSQL-backed **private** workspace persistence is implemented as an opt-in JSONB adapter. Full normalized relational storage, shared-service tenant auth, backup/restore and production hardening are not implemented.
 - Encrypted connector credentials with KMS, rotation and OAuth wherever supported.
 - Asynchronous queues, retry/DLQ, idempotency checks, provider webhook signing and source-level checkpointing.
 - Scale the pilot's saved run snapshots into relational, versioned reconciliation records with configurable retention, replay verification and tamper-evident approvals.
@@ -73,13 +75,13 @@ This release cannot accurately reconcile graduated tiering, minimums shared acro
 
 ## Next engineering milestone
 
-1. Introduce an error-returning repository interface and PostgreSQL-backed transactional persistence, **connecting** the already versioned SQL schema; retain the local JSON demo adapter.
+1. Extend the error-returning repository and opt-in PostgreSQL JSONB adapter into normalized, versioned relational persistence; retain the local JSON demo adapter.
 2. Add organizations, identities and memberships before exposing multiple customer workspaces; enforce tenant scoping for all coverage checks and exports.
 3. Verify OIDC login, refresh/logout and per-role access across every import, run, finding and export route.
 4. Move connector ingestion into durable jobs with checkpoints, concurrency limits and retries.
 5. Add reviewed contract fixtures for tiering and source completeness before expanding monetary rules.
 
-Current saved runs are a pilot foundation, not completion of the production foundation phase. Built-in SSO, PostgreSQL-backed **application persistence**, end-to-end tenant authorization, live customer integration and production certification remain unimplemented.
+Current saved runs are a pilot foundation, not completion of the production foundation phase. Built-in SSO, **production-grade normalized** PostgreSQL persistence, end-to-end tenant authorization, live customer integration and production certification remain unimplemented.
 
 ## Commercial operating plan
 
