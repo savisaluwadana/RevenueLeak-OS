@@ -83,6 +83,7 @@ type ScanSummary struct {
 	SkippedOverflow    int    `json:"skipped_overflow"`
 	Findings           int    `json:"findings"`
 	ReopenedFindings   int    `json:"reopened_findings"`
+	CoverageGaps       int    `json:"coverage_gaps"`
 }
 type Database struct {
 	Contracts    []Contract   `json:"contracts"`
@@ -95,6 +96,7 @@ type Database struct {
 	UpdatedAt    string       `json:"updated_at"`
 	ScanRuns     []ScanRun    `json:"scan_runs"`
 	ScanSequence int64        `json:"scan_sequence"`
+	Coverage     []CoverageGap `json:"coverage"`
 }
 
 func NewDatabase() Database {
