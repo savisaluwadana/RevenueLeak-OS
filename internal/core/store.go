@@ -55,6 +55,12 @@ func Open(path string) (*Store, error) {
 	}
 	return s, nil
 }
+// Read implements Repository for the durable single-process JSON pilot.
+// All database-backed adapters must propagate their read failures instead.
+func (s *Store) Read() (Database, error) {
+	return s.Snapshot(), nil
+}
+
 func (s *Store) Snapshot() Database {
 	s.mu.Lock()
 	defer s.mu.Unlock()
