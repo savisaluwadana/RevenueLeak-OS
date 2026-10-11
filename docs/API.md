@@ -20,7 +20,7 @@ The JSON API is same-origin. Private workspaces require the signed `rl_session` 
 | GET | /api/scans/{id} | `{run: {...}}`; recorded sources and results |
 | GET | /api/scans/{id}/export | Download `{schema_version: "1", run: {...}}` as JSON |
 
-`kind` is contracts, usage, billing or credits. Source CSV templates are in `samples/`. A finding status payload is `{"status":"reviewing","note":"..."}`; allowed statuses are new, reviewing, approved, false_positive and resolved.
+`kind` is contracts, usage, billing, credits, or mappings. Source CSV templates are in `samples/`. A finding status payload is `{"status":"reviewing","note":"..."}`; allowed statuses are new, reviewing, approved, false_positive and resolved.
 
 Saved-run routes require a private session and return `401` without it. Missing or expired runs return `404`; JSON errors have an `error` string. Run JSON responses use `Cache-Control: no-store`. Downloads include customer contracts and billing inputs. The source digest identifies the saved inputs, not financial collectibility or external certification.
 
@@ -33,3 +33,11 @@ Only effective-dated contracts with positive **monthly minima** are examined, fo
 ## Automatic reconciliation
 
 Set `AUTO_SCAN_INTERVAL` to a Go duration of at least `1h` (e.g. `24h`) in the server process environment. No extra API endpoint is added: the schedule runs server-side with the same 7-day closed-period grace and `trigger=scheduled` in saved history. It skips another scan for unchanged source fingerprints and rule versions within the same UTC day. Manual scans/imports still function. There is no connector refresh, notification or distributed scheduler in this pilot.
+
+## Provider customer identity mapping
+
+Import `mappings` with a CSV containing `source,external_customer_id,customer_id`. Allowed source values: `stripe`, `billing_csv`, `usage_csv`, `credits_csv`. Mapping targets refer to the canonical `customer_id` in contract records. The source/external ID pair is an upsert key; contradictory rows in one uploaded CSV are rejected. Mapping imports trigger reconciliation and save a run like other source changes.
+
+`GET /api/datasets` includes the `mappings` array. Saved run inputs include a snapshot of mappings; the source fingerprint includes mapping changes. Raw usage, credits and invoice source records keep their external IDs. Unknown billing sources (including synthetic demo data) cannot inherit CSV aliases. Imports are authenticated and CSRF-protected.
+
+**Accuracy warning:** Explicit mappings are asserted by the importing operator, not inferred or verified by the software. Many-to-one mappings can legitimately combine multiple billing customers but require independent finance verification to avoid duplicate billing totals. Full ingestion checks, provider customer-identity attestation, and tenant-level access policies remain production work.
