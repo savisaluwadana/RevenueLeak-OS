@@ -20,6 +20,8 @@
 - [x] Saved run inputs/results, evidence JSON exports, 25-run retention and history UI.
 - [x] Evidence changes reopen reviewed cases; regression tests cover restart, rollback and snapshot stability.
 - [x] Non-monetary source coverage checks for missing minimum-commitment periods, bounded historical window, authenticated API, dashboard and saved evidence.
+- [x] Optional single-process periodic reconciliation (`AUTO_SCAN_INTERVAL`), safe duplicate-scan suppression and cancellation tests.
+- [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.
 
 ## Phase 1: first paid pilot
