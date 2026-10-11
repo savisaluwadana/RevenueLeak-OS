@@ -41,7 +41,7 @@ func TestCoverageRoutePrivateAndSeparateFromRevenue(t *testing.T) {
 	if len(body.Gaps) != 1 || body.Gaps[0].MonthlyMinimumCents != 5000 {
 		t.Fatalf("wrong gaps: %+v", body)
 	}
-	snapshot := s.Store.Snapshot()
+	snapshot := snapshot(t, s.Store)
 	if len(snapshot.Findings) != 0 || snapshot.LastScan.Findings != 0 || snapshot.LastScan.CoverageGaps != 1 {
 		t.Fatalf("coverage inflated revenue: %+v", snapshot.LastScan)
 	}
