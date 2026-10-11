@@ -53,6 +53,39 @@ func TestScheduledScanAvoidsDuplicateWritesAndPreservesEvidence(t *testing.T) {
 	}
 }
 
+func TestScheduledScanAccountsForCustomerMappingChanges(t *testing.T) {
+	store, err := Open(t.TempDir() + "/store.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Update(func(d *Database) error {
+		*d = base()
+		d.Mappings = []CustomerMapping{{Source: "stripe", ExternalCustomerID: "cus_old", CustomerID: "c1"}}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	now := timeAt("2026-10-08")
+	if ran, err := ScheduledScan(store, now, 7); err != nil || !ran {
+		t.Fatalf("initial scan failed: ran=%v err=%v", ran, err)
+	}
+	if ran, err := ScheduledScan(store, now, 7); err != nil || ran {
+		t.Fatalf("unchanged mapped sources must not re-run: ran=%v err=%v", ran, err)
+	}
+	if err := store.Update(func(d *Database) error {
+		d.Mappings[0].CustomerID = "c2"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if ran, err := ScheduledScan(store, now, 7); err != nil || !ran {
+		t.Fatalf("mapping changes must re-run the audit: ran=%v err=%v", ran, err)
+	}
+	if got := len(store.Snapshot().ScanRuns); got != 2 {
+		t.Fatalf("expected two evidence runs, got %d", got)
+	}
+}
+
 func TestScheduledScanRechecksRuleVersion(t *testing.T) {
 	store, err := Open(t.TempDir() + "/store.json")
 	if err != nil {
