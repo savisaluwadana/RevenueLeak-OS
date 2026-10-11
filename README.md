@@ -28,6 +28,10 @@ go run ./cmd/server
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
 
+## Opt-in automatic reconciliation (pilot feature)
+
+By default reconciliation is manual/on-import. Set `AUTO_SCAN_INTERVAL=24h` in the server environment to enable the built-in periodic closed-period audit (minimum 1h). The service checks at startup and at the configured interval, saves an audit run only when the UTC day, source fingerprint or rule version changes, and stops gracefully on SIGINT/SIGTERM. This does **not** ingest new external data, guarantee data freshness, or replace distributed job scheduling for production. Logs report failures; it does not send alerts yet. A manual CSV import continues to trigger its own reconciliation. See [development guide](docs/DEVELOPMENT.md).
+
 ## Source coverage checks (pilot feature)
 
 The **Coverage checks** page checks the latest 12 eligible closed months (after the existing 7-day grace) for active monthly-minimum contract periods with **neither independent usage nor finalized invoice data**. Checks are derived from imported effective-dated contracts, and are updated on every scan/import. They have a separate authenticated `GET /api/coverage` endpoint and appear in saved scan evidence.
