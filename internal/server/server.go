@@ -24,7 +24,7 @@ import (
 )
 
 type Server struct {
-	Store         *core.Store
+	Store         core.Repository
 	Password      string
 	Demo          bool
 	WebDir        string
@@ -36,7 +36,7 @@ type apiError struct {
 	Error string `json:"error"`
 }
 
-func New(store *core.Store, password string, demo bool, webDir string) *Server {
+func New(store core.Repository, password string, demo bool, webDir string) *Server {
 	secret := os.Getenv("SESSION_SECRET")
 	if secret == "" {
 		secret = password + "|RevenueLeakOS-signed-session-v1"
@@ -51,6 +51,18 @@ func respond(w http.ResponseWriter, status int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 func fail(w http.ResponseWriter, status int, msg string) { respond(w, status, apiError{msg}) }
+
+// readWorkspace fails closed. Financial records are never replaced by an
+// apparently empty dashboard when their backing database cannot be read.
+func (s *Server) readWorkspace(w http.ResponseWriter) (core.Database, bool) {
+	d, err := s.Store.Read()
+	if err != nil {
+		log.Printf("workspace read failed: %v", err)
+		fail(w, http.StatusInternalServerError, "Unable to load workspace data")
+		return core.Database{}, false
+	}
+	return d, true
+}
 func (s *Server) sign(in string) string {
 	m := hmac.New(sha256.New, s.SigningKey)
 	m.Write([]byte(in))
@@ -221,7 +233,10 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]bool{"ok": true})
 }
 func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
-	d := s.Store.Snapshot()
+	d, ok := s.readWorkspace(w)
+	if !ok {
+		return
+	}
 	type totals struct {
 		PotentialCents int64 `json:"potential_cents"`
 		Open           int   `json:"open"`
@@ -265,17 +280,32 @@ func countCustomers(rows []core.Contract) int {
 	return len(m)
 }
 func (s *Server) findings(w http.ResponseWriter, r *http.Request) {
-	respond(w, 200, map[string]any{"findings": s.Store.Snapshot().Findings})
+	d, ok := s.readWorkspace(w)
+	if !ok {
+		return
+	}
+	respond(w, 200, map[string]any{"findings": d.Findings})
 }
 func (s *Server) coverage(w http.ResponseWriter, r *http.Request) {
-	respond(w, 200, map[string]any{"gaps": s.Store.Snapshot().Coverage})
+	d, ok := s.readWorkspace(w)
+	if !ok {
+		return
+	}
+	respond(w, 200, map[string]any{"gaps": d.Coverage})
 }
 func (s *Server) datasets(w http.ResponseWriter, r *http.Request) {
-	d := s.Store.Snapshot()
+	d, ok := s.readWorkspace(w)
+	if !ok {
+		return
+	}
 	respond(w, 200, map[string]any{"contracts": d.Contracts, "mappings": d.Mappings, "usage": d.Usage, "billing": d.Billing, "credits": d.Credits})
 }
 func (s *Server) audit(w http.ResponseWriter, r *http.Request) {
-	respond(w, 200, map[string]any{"events": s.Store.Snapshot().Audit})
+	d, ok := s.readWorkspace(w)
+	if !ok {
+		return
+	}
+	respond(w, 200, map[string]any{"events": d.Audit})
 }
 func (s *Server) scan(w http.ResponseWriter, r *http.Request) {
 	var summary core.ScanSummary
@@ -420,11 +450,15 @@ func safeCSV(s string) string {
 	return s
 }
 func (s *Server) export(w http.ResponseWriter, r *http.Request) {
+	d, ok := s.readWorkspace(w)
+	if !ok {
+		return
+	}
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", "attachment; filename=revenueleak-findings.csv")
 	writer := csv.NewWriter(w)
 	_ = writer.Write([]string{"id", "customer_id", "customer_name", "period", "metric", "kind", "currency", "potential_cents", "expected_cents", "billed_cents", "status", "note"})
-	for _, f := range s.Store.Snapshot().Findings {
+	for _, f := range d.Findings {
 		_ = writer.Write([]string{safeCSV(f.ID), safeCSV(f.CustomerID), safeCSV(f.CustomerName), f.Period, safeCSV(f.Metric), f.Kind, f.Currency, strconv.FormatInt(f.PotentialCents, 10), strconv.FormatInt(f.ExpectedCents, 10), strconv.FormatInt(f.BilledCents, 10), f.Status, safeCSV(f.Note)})
 	}
 	writer.Flush()
