@@ -35,7 +35,7 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 	}
 	required := map[string][]string{
 		"contracts": {"customer_id", "customer_name", "metric", "currency", "unit_price_cents", "included_units", "monthly_minimum_cents", "effective_from"},
-		"mappings": {"source", "external_customer_id", "customer_id"},
+		"mappings":  {"source", "external_customer_id", "customer_id"},
 		"usage":     {"usage_id", "customer_id", "period", "metric", "quantity"},
 		"billing":   {"line_id", "invoice_id", "customer_id", "period", "metric", "quantity", "amount_cents", "currency", "status"},
 		"credits":   {"credit_id", "customer_id", "period", "metric", "amount_cents", "reason"},
