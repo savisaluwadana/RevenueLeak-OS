@@ -27,14 +27,20 @@ func TestCoverageRespectsFinalizedBillingAndUsage(t *testing.T) {
 	d.Contracts = []Contract{contractWithMinimum("2026-09")}
 	d.Billing = []Billing{{ID: "b", InvoiceID: "i", CustomerID: "c1", Period: "2026-09", Metric: "calls", Currency: "USD", Status: "draft"}}
 	Scan(&d, timeAt("2026-10-08"), 7)
-	if len(d.Coverage) != 1 { t.Fatal("draft invoice does not establish final billing") }
+	if len(d.Coverage) != 1 {
+		t.Fatal("draft invoice does not establish final billing")
+	}
 	d.Billing[0].Status = "paid"
 	Scan(&d, timeAt("2026-10-08"), 7)
-	if len(d.Coverage) != 0 { t.Fatal("paid invoice should close both-sources-missing signal") }
+	if len(d.Coverage) != 0 {
+		t.Fatal("paid invoice should close both-sources-missing signal")
+	}
 	d.Billing = nil
 	d.Usage = []Usage{{ID: "u", CustomerID: "c1", Period: "2026-09", Metric: "calls", Quantity: 8}}
 	Scan(&d, timeAt("2026-10-08"), 7)
-	if len(d.Coverage) != 0 { t.Fatal("usage should close both-sources-missing signal") }
+	if len(d.Coverage) != 0 {
+		t.Fatal("usage should close both-sources-missing signal")
+	}
 }
 
 func TestCoverageCreditAndContractVersion(t *testing.T) {
