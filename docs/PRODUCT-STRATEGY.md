@@ -17,7 +17,8 @@ RevenueLeak OS is a **provider-neutral, read-only revenue assurance and preventi
 | Reviewable monetary variance cases and saved evidence | Implemented for pilot |
 | Missing independent usage **and** finalized billing for minimum-commitment months | Implemented as non-monetary coverage checks (12 closed months) |
 | Secure independent customer organizations / tenant isolation | Not implemented |
-| PostgreSQL, migrations, job queue, SSO, credential vault | Not implemented |
+| PostgreSQL schema and migrations | Implemented as a schema-only CI-tested foundation; Go API still uses JSON persistence |
+| PostgreSQL runtime, job queue, SSO, credential vault | Not implemented |
 | Opt-in periodic scans with same-day deduplication | Implemented in single-process pilot; no distributed scheduler or provider refresh |
 | Provider-specific canonical customer ID mappings | Implemented as explicit CSV import with historical provenance; no automatic matching/approval |
 | Autonomous ingestion or webhook processing | Not implemented |
@@ -97,8 +98,8 @@ Do not expose a paid plan until its advertised capabilities are implemented.
 
 ## Immediate work order
 
-1. Merge the source coverage implementation after CI; use it to test missing-period detection without invented monetary totals.
-2. Implement the P0 multi-tenant foundation in small reviewable changes: repository interface → PostgreSQL migrations → tenant identity and authorization → job queue.
+1. Source coverage, optional scans and provider-mapped customer IDs are now implemented for the pilot; continue adding finance-approved fixtures.
+2. Build the P0 multi-tenant foundation in reviewable slices: tested SQL schema/migrations (implemented) → error-returning repository interface → PostgreSQL runtime adapter → tenant identity and authorization → durable job queue.
 3. Validate two customer contract models and add fixtures; then implement provider mapping and scheduled scans.
 4. Only then expose customer-specific SaaS workspaces and start the first limited production pilots.
 
