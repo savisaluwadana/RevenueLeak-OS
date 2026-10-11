@@ -28,11 +28,17 @@ go run ./cmd/server
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
 
+## Optional PostgreSQL-backed private workspace (experimental)
+
+The Go server can now use PostgreSQL for **one provisioned, authenticated private workspace** when `DATABASE_URL` and `WORKSPACE_ID` are provided. The JSON demo remains the default, and Stripe remains optional. This uses a transactionally updated, tenant-scoped JSONB workspace document while the long-term normalized relational repository is still being developed. See [PostgreSQL setup](docs/POSTGRESQL-FOUNDATION.md) for migration, runtime role, org provisioning and testing instructions.
+
+**Not production multi-tenancy:** the application still has only one admin password per running server and no OIDC, organization membership authorization, RBAC or routed multi-company sessions. Do not expose multiple unrelated customer organizations behind a shared HTTP instance. Migration from existing JSON pilot data is not automatic.
+
 ## PostgreSQL tenant schema (development foundation only)
 
-The repository now contains a versioned PostgreSQL schema, a checksum-verified migration runner, and CI tests for row-level security and cross-tenant foreign keys. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
+The repository contains a versioned PostgreSQL schema, a checksum-verified migration runner, and CI tests for row-level security, cross-tenant foreign keys and an opt-in private PostgreSQL repository. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
 
-**The running server still uses the local JSON workspace.** The PostgreSQL schema has not been integrated with the Go API, identities, or customer accounts. Do not treat it as production multi-tenancy or migrate real customer data to it yet.
+**The default server uses the local JSON workspace.** Opt-in PostgreSQL mode persists a single private workspace; multi-user identity, RBAC and production tenant authorization remain unimplemented.
 
 ## Canonical customer ID mappings (pilot feature)
 
