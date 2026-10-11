@@ -50,7 +50,7 @@ func TestMappingImportRequiresLoginAndReconcilesProviderIDs(t *testing.T) {
 	if rec.Code != 200 {
 		t.Fatalf("authorized mapping import failed: %d %s", rec.Code, rec.Body.String())
 	}
-	snapshot := s.Store.Snapshot()
+	snapshot := snapshot(t, s.Store)
 	if len(snapshot.Mappings) != 1 || snapshot.LastScan.Findings != 1 || snapshot.Findings[0].CustomerID != "customer-contract" || snapshot.Findings[0].BilledCents != 5 {
 		t.Fatalf("mapping was not used for reconciliation: %+v", snapshot)
 	}
