@@ -74,6 +74,7 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 	}
 	contracts := []Contract{}
 	mappings := []CustomerMapping{}
+	seenMappings := map[string]string{}
 	usage := []Usage{}
 	billing := []Billing{}
 	credits := []Credit{}
@@ -111,6 +112,11 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 			if len(get(row, "external_customer_id")) > 255 || len(get(row, "customer_id")) > 255 {
 				return fail(errors.New("customer identifiers must be 255 characters or fewer"))
 			}
+			key := mappingKey(source, get(row, "external_customer_id"))
+			if canonical, exists := seenMappings[key]; exists && canonical != get(row, "customer_id") {
+				return fail(errors.New("conflicting customer mapping for the same source and external identifier"))
+			}
+			seenMappings[key] = get(row, "customer_id")
 			mappings = append(mappings, CustomerMapping{Source: source, ExternalCustomerID: get(row, "external_customer_id"), CustomerID: get(row, "customer_id")})
 		case "contracts":
 			if e = nonempty(row, "customer_id", "customer_name", "metric", "currency", "effective_from"); e != nil {
