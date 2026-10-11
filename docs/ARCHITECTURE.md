@@ -9,6 +9,7 @@ RevenueLeak OS v0.2 is a **single-workspace, local or private-hosted SaaS revenu
 ```mermaid
 flowchart LR
  A[Contracts CSV] --> D[Validated normalized records]
+ M[Customer mapping CSV] --> D
  B[Independent usage CSV] --> D
  C[Invoice CSV or read-only Stripe] --> D
  E[Approved credits CSV] --> D
@@ -76,3 +77,9 @@ Runs contain all input contracts, usage, billing and credits, the result summary
 `internal/core/coverage.go` enumerates the 12 most recent eligible closed months after the configured grace period, bounded by each contract's effective interval. It selects the effective contract version per customer/metric/month and checks whether at least one independent usage record **or** finalized paid/open billing line exists. Months lacking both are stored as `CoverageGap` warnings, exposed at `GET /api/coverage`, and copied into saved scan history. Their contextual contract minimum is never added to the revenue discrepancy total.
 
 The warning means **data missing from this workspace**, not necessarily billing omitted at the source. Unrecorded cancellation, incomplete provider synchronization, invoice adjustments, or commercial exceptions may explain it. A single usage or invoice line satisfies the narrow both-absent test; separate future rules should check full-source completeness, ingestion freshness, and invoices still in progress. No payment or correction action is authorized by these warnings.
+
+## Provider ID resolution
+
+Canonical customer IDs come from contract records. Optional explicit `CustomerMapping` rows are keyed by provider/source plus exact external customer identifier. The reconciliation engine applies mappings on a per-source basis (Stripe or CSV billing, independent usage CSV, credits CSV) without rewriting stored raw provider IDs. Source coverage checks use the same mappings to avoid false missing-evidence warnings. Every saved reconciliation run includes the active mapping source data and source digest; previous snapshots remain immutable after a later mapping import. Unknown billing sources and synthetic demo invoices are not treated as CSV by default.
+
+**Trust boundary:** Mappings are finance-controlled input assumptions, not identity proof. They should eventually have maker-checker approval, collision detection, ingestion provenance, tenant isolation and provider ID validation before customer-production use. Data from unmatched sources is not silently merged by display name.
