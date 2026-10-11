@@ -8,13 +8,13 @@
 
 The application now lives at [savisaluwadana/RevenueLeak-OS](https://github.com/savisaluwadana/RevenueLeak-OS). See [migration notes](docs/MIGRATION.md), [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), and [security](SECURITY.md).
 
-## Quick start (no dependencies beyond Go 1.23)
+## Quick start (Go 1.23+, PostgreSQL not required for demo)
 
 ```bash
 DEMO_MODE=true go run ./cmd/server
 ```
 
-Open **http://127.0.0.1:8080**. The default demo binds to localhost, seeds synthetic customers, and works without credentials or network access. Sample CSV files are available from the Data sources page. Data persists in `./data/revenueleak.json`; the **Settings → Reset demo data** button restores the sample dataset.
+Open **http://127.0.0.1:8080**. The default demo binds to localhost, seeds synthetic customers, and works without external credentials or network services after Go dependencies have been installed. Sample CSV files are available from the Data sources page. Data persists in `./data/revenueleak.json`; the **Settings → Reset demo data** button restores the sample dataset.
 
 ### Private workspace
 
@@ -69,7 +69,7 @@ Evidence downloads include customer contracts, usage, invoices and credits. Prot
 ## What is implemented
 
 - Fully functioning web dashboard: currency-separated portfolio KPIs, billing-period impact, leak categories, searchable and filterable investigations, source uploads, export, activity log, setup and demo reset.
-- Go standard-library JSON API, session login, signed HttpOnly cookies, CSRF enforcement, bounded upload sizes, security headers and rate limiting for sign-in.
+- Go JSON API with one pinned PostgreSQL driver dependency, session login, signed HttpOnly cookies, CSRF enforcement, bounded upload sizes, security headers and rate limiting for sign-in.
 - Four validated financial CSV sources: effective-dated rate cards, independently metered usage, finalized invoice lines and explicit service credits. A fifth optional customer-ID mapping CSV aligns external provider identifiers to canonical contract customers. Imports are keyed/upserted (retries do not duplicate the same ID).
 - Deterministic reconciliation, supporting unit prices, included units, monthly minimums, paid/open invoice totals and explicit credits. It skips unfinished months (7-day grace), missing contracts, currency conflicts, draft/void invoices.
 - Evidence in each finding: source IDs, billed/expected minor currency units, explanation and editable investigation status/notes. Human approval is mandatory for recovery actions.
@@ -139,7 +139,7 @@ go vet ./...
 go build -o revenueleak ./cmd/server
 ```
 
-The app uses **only the Go standard library** for the backend and browser-native JavaScript/CSS for the UI—no package installation required. The default filesystem datastore is sufficient for a single-workspace pilot, but production multi-tenant use requires a relational database, encrypted credential vault, RBAC, stronger job infrastructure and an independent security review. See [architecture](docs/ARCHITECTURE.md), [security](SECURITY.md), and [roadmap](docs/ROADMAP.md).
+The backend uses the Go standard library plus a pinned, MIT-licensed PostgreSQL driver; the UI uses browser-native JavaScript/CSS. The local demo does not require a PostgreSQL service, but Go modules must be downloaded on first build. The default filesystem datastore is sufficient for a single-workspace pilot, but production multi-tenant use requires a relational database, encrypted credential vault, RBAC, stronger job infrastructure and an independent security review. See [architecture](docs/ARCHITECTURE.md), [security](SECURITY.md), and [roadmap](docs/ROADMAP.md).
 
 ## Limitations
 
