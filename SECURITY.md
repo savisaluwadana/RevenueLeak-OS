@@ -14,7 +14,7 @@
 
 1. No SSO, MFA, RBAC, multiple users, SCIM or audit attribution to individual users.
 2. JSON persistence uses OS permissions but **no application-level at-rest encryption**. Encrypt the storage volume and backups; enforce OS access controls.
-3. No multi-tenant isolation **in the running application**. A forced-RLS PostgreSQL schema exists as an integration-tested foundation, but the Go HTTP server still uses one JSON workspace, and no OIDC/RBAC or database tenant context is wired. Never co-host multiple real customers in one pilot workspace.
+3. No **authenticated multi-tenant HTTP isolation**. Optional PostgreSQL mode binds a whole private server process to one static, provisioned workspace ID via transaction-local RLS. The HTTP server still uses one admin credential and has no OIDC/RBAC or per-user organization authorization. Never co-host multiple real customer workspaces in one public pilot instance.
 4. Audit events are mutable alongside the data store, not an externally secured append-only log.
 5. Session cookies are marked `Secure` when the Go app directly terminates TLS. With TLS offload, ensure HTTPS enforcement at the proxy and cookie security validation before exposing externally.
 6. CSP permits inline *styles* to support dynamic chart rendering; scripts remain same-origin only.
@@ -46,4 +46,4 @@ Saved runs duplicate customer contracts and financial inputs in the private JSON
 
 ## PostgreSQL foundation security boundary
 
-The database migrations and RLS isolation tests in `db/` are **schema-only development assets**. They do not protect the existing JSON-backed HTTP API. The future PostgreSQL runtime role must be non-owner, non-superuser, and non-`BYPASSRLS`, while the application must derive `app.organization_id` from a verified organization membership and set it transaction-locally. Custom PostgreSQL session settings are not themselves authentication; SQL injection and broad grants remain threats. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
+The database migrations and RLS isolation tests in `db/` support an **optional single-private-workspace adapter**; they do not protect the default JSON-backed demo and do not implement per-user tenant authorization. PostgreSQL mode rejects schema owners, superusers and `BYPASSRLS` roles, and scopes queries with an environment-configured organization UUID. A future multi-tenant service must instead derive this value from a verified organization membership. Custom PostgreSQL session settings are not themselves authentication; SQL injection and broad grants remain threats. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
