@@ -1,72 +1,85 @@
-# PostgreSQL tenant foundation (schema-only milestone)
+# PostgreSQL foundation and private-workspace adapter
 
-**Status:** PostgreSQL schema and migration tools are implemented and tested against a disposable PostgreSQL 16 instance in CI. The running RevenueLeak-OS HTTP API **still uses the single-workspace local JSON store**. This milestone is not a production database switch, not login/RBAC, and not an authorization-complete multi-tenant release.
+**Status:** PostgreSQL migrations and row-level-security (RLS) tests are implemented, and the Go server has an **opt-in private PostgreSQL workspace adapter**. The default demo remains local JSON. This is **not** multi-user or multi-tenant SaaS authorization: there is still one administrator credential per HTTP server and no OIDC/RBAC.
 
-## Scope
+## Data architecture
 
-`db/migrations/0001_tenant_foundation.sql` defines:
+Migration `0001_tenant_foundation.sql` creates tenant-scoped organizations, memberships, contracts, provider/customer mappings, usage, invoice lines, credits, reconciliation runs, findings, approvals, ingest jobs, and audit events. Every tenant-owned table is forced into RLS; financial cross-table foreign keys include organization identifiers.
 
-| Table | Purpose |
-| --- | --- |
-| `organizations` | Customer workspace identities |
-| `memberships` | External OIDC issuer/subject and intended workspace role |
-| `contracts` | Effective-dated, versioned-per-start-month commercial prices |
-| `customer_mappings` | Provider-specific external IDs to canonical contract IDs |
-| `usage_records` | Independent, nonnegative metered usage with per-provider record IDs |
-| `invoice_lines` | Provider-scoped invoice line identifiers and finalized/draft status |
-| `credits` | Explicit credits and reasons |
-| `reconciliation_runs` | Source digest, rules version, evidence JSON and result summary |
-| `findings` | Evidence-backed monetary discrepancy cases |
-| `approval_records` | A proposed maker/checker trail linked to case and membership |
-| `ingest_jobs` | Idempotency key, provider, retry metadata, state |
-| `audit_events` | Organization-scoped activity history |
+Migration `0002_workspace_documents.sql` adds one transactionally versioned `workspace_documents` JSONB row per organization. The **current Go adapter uses this transitional row** to persist the existing `core.Database` snapshot, including its bounded run history. It does **not** yet write to the normalized relational tables in migration 0001. The normalized schema is for the next development phase.
 
-Every tenant-owned table has an `organization_id` column, enforced row-level security (RLS) and a forced-RLS flag. Composite organization-qualified foreign keys are used for cross-table financial links, so an organization's finding cannot link to another organization's saved reconciliation run or approval actor. Provider record keys are scoped by organization and source.
+`core.Repository` exposes `Read() (Database, error)` and `Update(func(*Database) error) error`. The JSON demo and PostgreSQL adapter implement the same interface. The HTTP API and scheduler propagate failed reads rather than returning fabricated zero-value finance data. The PostgreSQL adapter uses read-only transactions for reads, serializable row-locked transactions for writes and bounded retries on serialization conflicts. Source inputs and resulting scan evidence commit together as one JSONB snapshot.
 
-**Important:** This is a SQL foundation, not proof of customer-grade transaction integrity. There is no Postgres adapter, no application organization membership verification, no KMS secret handling, no API permission enforcement, no live connectors or durable worker yet.
+## Setup for a disposable private test workspace
 
-## Run migrations on a disposable database
+**Prerequisites:** PostgreSQL 15+, Go 1.23+, `psql`, and a dedicated development database. Do **not** use real customer financial data to try this feature.
 
-You need PostgreSQL **15 or later**, a local `psql` client, and a database role authorized to create schemas/tables/policies. Use a fresh test database rather than an existing finance database.
+1. Apply migrations as a **separate privileged migration owner**:
 
 ```bash
-export DATABASE_URL='postgresql://migration_owner:password@localhost:5432/revenueleak_dev?sslmode=require'
-bash db/migrate.sh
+DATABASE_URL='postgresql://migration_owner:***@localhost:5432/revenueleak_dev?sslmode=require' bash db/migrate.sh
 ```
 
-The runner applies SQL files in filename order, records the SHA-256 checksum in `revenueleak.schema_migrations`, and runs each migration and its ledger insert inside one transaction. A re-run skips files with the same checksum and rejects files that changed after application.
-
-**Rollback policy:** This first version does not provide automatic destructive `down` migrations. Back up and test restore before upgrades, and create forward-fix migrations for later schema changes. Treat a migration checksum mismatch as an incident to investigate, not a reason to delete the migration ledger.
-
-CI starts a disposable PostgreSQL container and executes the migration runner twice, verifies isolation with `db/tests/tenant_isolation.sql`, and checks that altered migration content is rejected.
-
-## Runtime security design — not yet connected
-
-The intended application database login must be separate from the migration owner, with no superuser privileges, `BYPASSRLS`, table ownership or `CREATE` permission on `revenueleak`. Grant only the needed table actions, and prefer **append-only** permissions on audit and approval history where appropriate.
-
-The `revenueleak.current_organization()` function reads the transaction-local database setting `app.organization_id`. Future application code must derive the organization ID **only from a validated server-side principal/membership**, and execute every query within the same transaction after setting:
+2. Provision one organization UUID with the migration owner (in your preferred SQL administration tool). Forced RLS requires transaction-local organization context for a non-superuser migration owner:
 
 ```sql
 BEGIN;
 SELECT set_config('app.organization_id', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', true);
--- organization-scoped SQL here
+INSERT INTO revenueleak.organizations (id, slug, display_name)
+VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'pilot-workspace', 'Private pilot');
 COMMIT;
 ```
 
-The third argument to `set_config` makes the setting **transaction-local**. Never set the tenant from an untrusted request header or browser query parameter. Never expose general SQL query execution to customers. PostgreSQL custom GUC values can be set by a database session: **RLS is defense in depth, not a substitute for robust authentication, authorization, safe SQL, and a non-bypassable application role.** SQL injection into a writable database session can undermine trust.
+3. Create a **different runtime role** using your database administration process and a strong secret stored outside source control. It must not be a schema owner, superuser or `BYPASSRLS` role. Grant only the permissions needed by this **private JSONB workspace adapter**:
 
-A missing organization setting returns no records under RLS. The CI isolation checks cover overlapping provider IDs in two organizations, denied cross-organization reads/updates/inserts, cross-organization foreign-key rejection, and default-deny reads without a tenant.
+```sql
+GRANT USAGE ON SCHEMA revenueleak TO revenueleak_runtime;
+GRANT EXECUTE ON FUNCTION revenueleak.current_organization() TO revenueleak_runtime;
+GRANT SELECT ON revenueleak.organizations TO revenueleak_runtime;
+GRANT SELECT, INSERT, UPDATE ON revenueleak.workspace_documents TO revenueleak_runtime;
+```
 
-## Migration from the JSON pilot — not implemented
+4. Use the runtime role's DSN and a separate, sufficiently long session secret. **Do not** enable `DEMO_MODE` with PostgreSQL.
 
-No automatic JSON-to-SQL migration or production data cutover is included. Do not point existing live customer data at the new schema and assume it has been migrated.
+```bash
+export DATABASE_URL='postgresql://revenueleak_runtime:***@localhost:5432/revenueleak_dev?sslmode=require'
+export WORKSPACE_ID='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+export ADMIN_PASSWORD='your-unique-long-admin-password'
+export SESSION_SECRET='a-different-high-entropy-secret-at-least-32-characters'
+export ADDR='127.0.0.1:8080'
+go run ./cmd/server
+```
 
-The next changes should be:
+TLS mode `require` encrypts transport but does not fully verify server identity. For managed production-like databases, prefer `sslmode=verify-full` with a trusted CA, and verify that the hostname matches. `sslmode=disable` is acceptable only for disposable loopback CI/dev fixtures, never across untrusted networks.
 
-1. **Implemented:** an error-returning `core.Repository` interface with `Read() (Database, error)` and `Update(...) error`. HTTP endpoints and the scheduler fail closed on read errors. The JSON pilot implements this interface; the PostgreSQL adapter is not implemented yet.
-2. Implement PostgreSQL transactional reads/writes with org-scoped connection/session context, strict transactions, and safe migration from a copy of JSON pilot data.
-3. Implement OIDC identities and per-organization memberships before routing HTTP requests to different organizations. Add route-by-route role checks for imports, scans, reviews, exports and audit history.
-4. Integration-test concurrent writers, import deduplication, durable scan history, backup/restore and two-tenant negative cases against real PostgreSQL.
-5. Replace single-process scan scheduling with an idempotent distributed job queue and source-specific ingestion checkpoints.
+The server rejects invalid workspace UUIDs, absent organizations, and privileged database logins. It logs **storage type**, not the database DSN. Session-cookie and reverse-proxy security limitations from `SECURITY.md` still apply.
 
-**Release gate:** No public multi-tenant rollout until the application path—not only the SQL schema—passes cross-tenant isolation, data recovery and security reviews.
+**Existing JSON data is not migrated.** PostgreSQL mode starts with an empty workspace document until records are deliberately imported or entered. Do not point a live instance at the new database and assume existing findings/history have moved.
+
+## Migration runner and CI guarantees
+
+The `db/migrate.sh` script uses a private `schema_migrations` ledger with SHA-256 checksums; each SQL migration and its ledger insert occur in one PostgreSQL transaction. Identical reruns are skipped; changed previously applied files are rejected. No destructive automatic down migration is provided—back up and test restore before an upgrade.
+
+CI provisions a disposable PostgreSQL 16 database and verifies:
+- Forced RLS on the 0001 tenant tables and an unavailable/no-tenant default deny.
+- Two organizations can use overlapping provider IDs without reading or modifying each other's records.
+- Cross-organization findings-to-run references are blocked by composite foreign keys.
+- SQL migration idempotent reruns and checksum drift rejection.
+- The live Go PostgreSQL repository (with an unprivileged role) separates alpha/beta workspace documents, persists data across repository instances, rolls back failed mutations, rejects unprovisioned workspaces and surfaces closed-connection failures.
+
+## Security and product limitations
+
+**Do not deploy this as a shared-customer SaaS yet.** The process is configured for exactly one trusted organization ID at startup, and the app uses one administrator credential. There is no org-picker, user membership verification, OIDC, RBAC, SCIM, per-user approval attribution, tenant-aware rate limiting, encrypted connector vault, JSON-to-relational migration, scheduled distributed jobs or audited disaster recovery.
+
+`app.organization_id` is a transaction-local PostgreSQL setting, chosen from server configuration here. A future multi-tenant service must derive it from a **verified** session and organization membership for each request, never from an untrusted header or browser parameter. PostgreSQL GUC settings are not authentication; database SQL injection can weaken this boundary. Use parameterized SQL, strict runtime privileges, and independent tenant authorization checks.
+
+The JSONB row per organization is intentionally transitional. It retains the pilot's 25-run retention cap and single-document write concurrency cost. Normalized source tables, durable evidence lifecycle, reconciliation fixtures and audit assurances must be implemented before demanding multi-company workloads.
+
+## Next development gates
+
+1. Build normalized, org-scoped repositories for contracts, invoices, usage, mappings, findings and immutable evidence, with a tested one-way migration from JSON pilot snapshots.
+2. Add OIDC logins, membership/RBAC checks and server-level two-organization negative tests for every endpoint (especially exports, investigations and connector configuration).
+3. Add durable ingestion jobs, source checkpointing, idempotent API retries and finance approval guardrails.
+4. Test production-like backup/restore, concurrency, load, PII minimization, monitoring, and an independent security review.
+
+See [release gate issue #5](https://github.com/savisaluwadana/RevenueLeak-OS/issues/5).
