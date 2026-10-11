@@ -9,6 +9,7 @@ import (
 type failingReadRepo struct {
 	updates int
 }
+
 func (r *failingReadRepo) Read() (Database, error) {
 	return Database{}, errors.New("database connection failed")
 }
