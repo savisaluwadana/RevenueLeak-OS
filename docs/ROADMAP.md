@@ -21,6 +21,8 @@
 - [x] Evidence changes reopen reviewed cases; regression tests cover restart, rollback and snapshot stability.
 - [x] Non-monetary source coverage checks for missing minimum-commitment periods, bounded historical window, authenticated API, dashboard and saved evidence.
 - [x] Optional single-process periodic reconciliation (`AUTO_SCAN_INTERVAL`), safe duplicate-scan suppression and cancellation tests.
+- [x] Source-scoped CSV customer identity mapping for billing, usage and credits, with saved source provenance and regression tests.
+- [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
 - [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.
 
