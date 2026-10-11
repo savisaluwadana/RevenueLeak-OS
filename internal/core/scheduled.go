@@ -31,13 +31,16 @@ func scheduledScanDue(d *Database, now time.Time, graceDays int) bool {
 // ScheduledScan checks whether a saved scan for the same current inputs and
 // UTC day already exists. No write happens when the scan is not due.
 // It must not be used as proof that external data sources are complete.
-func ScheduledScan(store *Store, now time.Time, graceDays int) (bool, error) {
-	snapshot := store.Snapshot()
+func ScheduledScan(store Repository, now time.Time, graceDays int) (bool, error) {
+	snapshot, err := store.Read()
+	if err != nil {
+		return false, fmt.Errorf("read scheduled scan sources: %w", err)
+	}
 	if !scheduledScanDue(&snapshot, now, graceDays) {
 		return false, nil
 	}
 	var ran bool
-	err := store.Update(func(d *Database) error {
+	err = store.Update(func(d *Database) error {
 		if !scheduledScanDue(d, now, graceDays) {
 			return nil
 		}
@@ -51,7 +54,7 @@ func ScheduledScan(store *Store, now time.Time, graceDays int) (bool, error) {
 
 // RunScheduledScans first checks at startup, then on each interval until the
 // service context is cancelled. The caller configures a safe interval.
-func RunScheduledScans(ctx context.Context, store *Store, interval time.Duration, graceDays int, onError func(error)) {
+func RunScheduledScans(ctx context.Context, store Repository, interval time.Duration, graceDays int, onError func(error)) {
 	check := func() {
 		if _, err := ScheduledScan(store, time.Now(), graceDays); err != nil && onError != nil {
 			onError(err)

@@ -99,8 +99,17 @@ func TestUploadAndFindings(t *testing.T) {
 	if res.Code != 200 {
 		t.Fatalf("upload: %d %s", res.Code, res.Body.String())
 	}
-	d := s.Store.Snapshot()
+	d := snapshot(t, s.Store)
 	if len(d.Usage) != 1 || len(d.Findings) != 1 || d.Findings[0].Kind != "missing_invoice" {
 		t.Fatalf("unexpected data: %+v", d)
 	}
+}
+
+func snapshot(t *testing.T, repository core.Repository) core.Database {
+	t.Helper()
+	d, err := repository.Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return d
 }

@@ -44,3 +44,7 @@ Make development changes on a feature branch and open a PR. Keep roadmap and sup
 ## PostgreSQL schema checks (not the running data store)
 
 For a **disposable** PostgreSQL 15+ database, set `DATABASE_URL` to a migration-owner connection and run `bash db/migrate.sh`. The script requires `psql` and a SHA-256 command. CI runs this migration twice, rejects checksum drift and executes the two-organization RLS test fixture in `db/tests/tenant_isolation.sql` using PostgreSQL 16. The local app remains independent of Postgres and keeps storing data in the single-workspace JSON file. See [PostgreSQL foundation](POSTGRESQL-FOUNDATION.md) for limitations and the required app-side authorization work.
+
+## Persistence error contract
+
+The HTTP server and scheduled scanner now depend on the `core.Repository` interface (`Read` returns both a snapshot and an error; `Update` is atomic). This is the first boundary required for PostgreSQL integration, not a PostgreSQL connection. If a future adapter cannot read its database, the dashboard, investigations and evidence exports must return an explicit 500 error rather than silently inventing an empty portfolio or a missing-history 404. Failure-injection tests cover the behavior; the existing local JSON store remains the runtime implementation.

@@ -24,6 +24,7 @@
 - [x] Source-scoped CSV customer identity mapping for billing, usage and credits, with saved source provenance and regression tests.
 - [x] PostgreSQL 16 tenant schema, migration checksum ledger, enforced RLS policies and cross-tenant SQL tests (schema only, not wired to the Go API).
 - [x] Correct scheduled-scan fingerprint to include customer ID mapping changes.
+- [x] Error-returning repository boundary for reads/writes, with server and scheduler failure-injection tests; PostgreSQL runtime adapter is next.
 - [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
 - [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.

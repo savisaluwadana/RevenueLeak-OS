@@ -63,7 +63,7 @@ No automatic JSON-to-SQL migration or production data cutover is included. Do no
 
 The next changes should be:
 
-1. Define an error-returning persistence interface: current `Snapshot() Database` cannot convey database errors, and must not silently return cached data if SQL fails.
+1. **Implemented:** an error-returning `core.Repository` interface with `Read() (Database, error)` and `Update(...) error`. HTTP endpoints and the scheduler fail closed on read errors. The JSON pilot implements this interface; the PostgreSQL adapter is not implemented yet.
 2. Implement PostgreSQL transactional reads/writes with org-scoped connection/session context, strict transactions, and safe migration from a copy of JSON pilot data.
 3. Implement OIDC identities and per-organization memberships before routing HTTP requests to different organizations. Add route-by-route role checks for imports, scans, reviews, exports and audit history.
 4. Integration-test concurrent writers, import deduplication, durable scan history, backup/restore and two-tenant negative cases against real PostgreSQL.

@@ -99,7 +99,7 @@ Do not expose a paid plan until its advertised capabilities are implemented.
 ## Immediate work order
 
 1. Source coverage, optional scans and provider-mapped customer IDs are now implemented for the pilot; continue adding finance-approved fixtures.
-2. Build the P0 multi-tenant foundation in reviewable slices: tested SQL schema/migrations (implemented) → error-returning repository interface → PostgreSQL runtime adapter → tenant identity and authorization → durable job queue.
+2. Build the P0 multi-tenant foundation in reviewable slices: tested SQL schema/migrations and error-returning repository interface (implemented) → PostgreSQL runtime adapter → tenant identity and authorization → durable job queue.
 3. Validate two customer contract models and add fixtures; then implement provider mapping and scheduled scans.
 4. Only then expose customer-specific SaaS workspaces and start the first limited production pilots.
 

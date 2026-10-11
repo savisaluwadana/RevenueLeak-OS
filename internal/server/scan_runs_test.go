@@ -14,7 +14,7 @@ func TestSavedRunRoutesRequireSessionAndExportStableSnapshot(t *testing.T) {
 	if err := s.Store.Update(func(d *core.Database) error { core.SeedDemo(d, time.Now()); return nil }); err != nil {
 		t.Fatal(err)
 	}
-	id := s.Store.Snapshot().ScanRuns[0].ID
+	id := snapshot(t, s.Store).ScanRuns[0].ID
 	h := s.Router()
 	for _, path := range []string{"/api/scans", "/api/scans/" + id, "/api/scans/" + id + "/export"} {
 		res := httptest.NewRecorder()
