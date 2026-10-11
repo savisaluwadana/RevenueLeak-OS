@@ -119,6 +119,7 @@ func (s *Server) Router() http.Handler {
 	mux.HandleFunc("POST /api/logout", s.logout)
 	mux.HandleFunc("GET /api/overview", s.overview)
 	mux.HandleFunc("GET /api/findings", s.findings)
+	mux.HandleFunc("GET /api/coverage", s.coverage)
 	mux.HandleFunc("GET /api/scans", s.scanRuns)
 	mux.HandleFunc("GET /api/scans/{id}", s.scanRun)
 	mux.HandleFunc("GET /api/scans/{id}/export", s.exportScanRun)
@@ -254,7 +255,7 @@ func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
 		}
 		byKind[f.Kind]++
 	}
-	respond(w, 200, map[string]any{"by_currency": byCurrency, "by_kind": byKind, "findings_count": len(d.Findings), "customers": countCustomers(d.Contracts), "last_scan": d.LastScan, "data_counts": map[string]int{"contracts": len(d.Contracts), "usage": len(d.Usage), "billing": len(d.Billing), "credits": len(d.Credits)}, "updated_at": d.UpdatedAt})
+	respond(w, 200, map[string]any{"by_currency": byCurrency, "by_kind": byKind, "findings_count": len(d.Findings), "coverage_count": len(d.Coverage), "customers": countCustomers(d.Contracts), "last_scan": d.LastScan, "data_counts": map[string]int{"contracts": len(d.Contracts), "usage": len(d.Usage), "billing": len(d.Billing), "credits": len(d.Credits)}, "updated_at": d.UpdatedAt})
 }
 func countCustomers(rows []core.Contract) int {
 	m := map[string]bool{}
@@ -265,6 +266,9 @@ func countCustomers(rows []core.Contract) int {
 }
 func (s *Server) findings(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]any{"findings": s.Store.Snapshot().Findings})
+}
+func (s *Server) coverage(w http.ResponseWriter, r *http.Request) {
+	respond(w, 200, map[string]any{"gaps": s.Store.Snapshot().Coverage})
 }
 func (s *Server) datasets(w http.ResponseWriter, r *http.Request) {
 	d := s.Store.Snapshot()
