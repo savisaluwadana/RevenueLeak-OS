@@ -36,3 +36,7 @@ Set `REVENUELEAK_TEST_BINARY` if the compiled server is elsewhere. The suite cre
 For manual QA: run a scan, inspect Saved runs, download a JSON bundle, change a usage CSV, then inspect both the new result and the old run. The old export must remain identical; reviewed cases whose evidence changed must reopen. Restart the server and confirm history persists. Use synthetic data only for repository test fixtures.
 
 Make development changes on a feature branch and open a PR. Keep roadmap and supported contract limitations accurate; a passing CI run is not production or finance sign-off.
+
+## Optional automatic audits
+
+`AUTO_SCAN_INTERVAL=24h` enables single-process periodic reconciliation, with a minimum interval of one hour. The initial due-check is performed when the server starts. Duplicate same-day scans with identical source digests and rule versions do not create another saved run. Re-checks are triggered when source data changes or a new UTC date begins. This does not fetch fresh provider data or guarantee billing completeness. Avoid running more than one instance with the JSON datastore; the production design requires durable distributed jobs, PostgreSQL and tenant isolation. Stop the process using SIGTERM/SIGINT to exercise graceful shutdown.

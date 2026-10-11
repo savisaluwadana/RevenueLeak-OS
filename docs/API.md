@@ -29,3 +29,7 @@ Saved-run routes require a private session and return `401` without it. Missing 
 `GET /api/coverage` requires the same private session as findings, and returns a `gaps` array containing `id`, `customer_id`, `customer_name`, `period`, `metric`, `currency`, `monthly_minimum_cents`, `reason` and `explanation`. This endpoint does **not** declare any money recoverable. `GET /api/overview` includes `coverage_count` and each scan summary includes `coverage_gaps`. Saved runs include a snapshot of the coverage array used in that run.
 
 Only effective-dated contracts with positive **monthly minima** are examined, for the last 12 eligible closed months after the existing seven-day grace. A warning is produced when neither independent usage nor finalized paid/open billing exists for that customer/metric/month. One present source does not guarantee completeness, and draft/void billing is not considered finalized.
+
+## Automatic reconciliation
+
+Set `AUTO_SCAN_INTERVAL` to a Go duration of at least `1h` (e.g. `24h`) in the server process environment. No extra API endpoint is added: the schedule runs server-side with the same 7-day closed-period grace and `trigger=scheduled` in saved history. It skips another scan for unchanged source fingerprints and rule versions within the same UTC day. Manual scans/imports still function. There is no connector refresh, notification or distributed scheduler in this pilot.

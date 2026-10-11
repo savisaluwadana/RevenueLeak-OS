@@ -18,6 +18,7 @@ RevenueLeak OS is a **provider-neutral, read-only revenue assurance and preventi
 | Missing independent usage **and** finalized billing for minimum-commitment months | Implemented as non-monetary coverage checks (12 closed months) |
 | Secure independent customer organizations / tenant isolation | Not implemented |
 | PostgreSQL, migrations, job queue, SSO, credential vault | Not implemented |
+| Opt-in periodic scans with same-day deduplication | Implemented in single-process pilot; no distributed scheduler or provider refresh |
 | Autonomous ingestion or webhook processing | Not implemented |
 | Tiered pricing, annual commits, refunds, taxes, write-offs, proration | Not implemented |
 | Contract OCR/AI interpretation and confirmation | Not implemented |

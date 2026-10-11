@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"revenueleak-os/internal/core"
@@ -41,8 +45,31 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if rawInterval := os.Getenv("AUTO_SCAN_INTERVAL"); rawInterval != "" {
+		interval, parseErr := time.ParseDuration(rawInterval)
+		if parseErr != nil || interval < time.Hour {
+			log.Fatal("AUTO_SCAN_INTERVAL must be a duration of at least 1h (example: 24h)")
+		}
+		go core.RunScheduledScans(shutdownCtx, store, interval, 7, func(err error) {
+			log.Printf("scheduled scan failed: %v", err)
+		})
+		log.Printf("automatic reconciliation enabled: interval=%s, grace=7d", interval)
+	}
 	srv := server.New(store, password, demo, webDir)
 	log.Printf("RevenueLeak OS %s: demo=%v stripe=%v", addr, demo, os.Getenv("STRIPE_RESTRICTED_KEY") != "")
 	httpServer := &http.Server{Addr: addr, Handler: srv.Router(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 65 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
-	log.Fatal(httpServer.ListenAndServe())
+	go func() {
+		<-shutdownCtx.Done()
+		stopCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(stopCtx); err != nil {
+			log.Printf("shutdown error: %v", err)
+		}
+	}()
+	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 }
