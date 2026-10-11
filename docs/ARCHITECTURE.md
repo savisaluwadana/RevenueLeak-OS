@@ -46,9 +46,11 @@ The browser provides the dashboard and upload/review forms, communicating only w
 
 ### Data persistence
 
-Each user action is modeled as a copy-on-write transaction under a process-local mutex. Data is saved as JSON to a `0600` temporary file, synced and atomically renamed into place before becoming the active in-memory snapshot. This supports process restarts, single-instance pilots and prevents partial file content under normal operating conditions. The filesystem must support atomic renames and persistent writable storage.
+In the **default local JSON mode**, each user action is modeled as a copy-on-write transaction under a process-local mutex. Data is saved as JSON to a `0600` temporary file, synced and atomically renamed into place before becoming the active in-memory snapshot. This supports process restarts, single-instance pilots and prevents partial file content under normal operating conditions. The filesystem must support atomic renames and persistent writable storage.
 
 This approach is **not** multi-process-safe, does not implement a transaction log, cannot support simultaneous pods or efficiently query large histories, and does not replace PostgreSQL for a multi-tenant production service.
+
+An **optional PostgreSQL private-workspace adapter** now implements the same `core.Repository` interface. It persists the pilot state as one JSONB workspace document, guarded by a validated static organization UUID, a nonprivileged runtime DB role, forced row-level security, transaction-local organization context, serializable write transactions and retries for serialization conflicts. The Go server can select this backend using `DATABASE_URL` and `WORKSPACE_ID`. This is a transitional private-workspace persistence mode: normalized relational source tables and per-user/multi-tenant authorization are not wired to API handlers yet. See [PostgreSQL foundation](POSTGRESQL-FOUNDATION.md).
 
 ### Auth and trust boundaries
 
