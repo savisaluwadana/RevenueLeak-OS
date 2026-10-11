@@ -14,7 +14,7 @@
 
 1. No SSO, MFA, RBAC, multiple users, SCIM or audit attribution to individual users.
 2. JSON persistence uses OS permissions but **no application-level at-rest encryption**. Encrypt the storage volume and backups; enforce OS access controls.
-3. No multi-tenant isolation. Never co-host multiple real customers in one pilot workspace.
+3. No multi-tenant isolation **in the running application**. A forced-RLS PostgreSQL schema exists as an integration-tested foundation, but the Go HTTP server still uses one JSON workspace, and no OIDC/RBAC or database tenant context is wired. Never co-host multiple real customers in one pilot workspace.
 4. Audit events are mutable alongside the data store, not an externally secured append-only log.
 5. Session cookies are marked `Secure` when the Go app directly terminates TLS. With TLS offload, ensure HTTPS enforcement at the proxy and cookie security validation before exposing externally.
 6. CSP permits inline *styles* to support dynamic chart rendering; scripts remain same-origin only.
@@ -43,3 +43,7 @@ Please do not test this pilot against third-party customer billing data or a pub
 ## Run evidence and retention
 
 Saved runs duplicate customer contracts and financial inputs in the private JSON store. The latest 25 scans are retained; older runs are pruned during successful scans. A demo reset clears all workspace data and history. Backups and exported JSON files are separate copies and require their own retention/deletion controls. Do not commit them or attach real customer exports to public GitHub issues. Hashes are not signatures and do not prevent a filesystem administrator from rewriting evidence.
+
+## PostgreSQL foundation security boundary
+
+The database migrations and RLS isolation tests in `db/` are **schema-only development assets**. They do not protect the existing JSON-backed HTTP API. The future PostgreSQL runtime role must be non-owner, non-superuser, and non-`BYPASSRLS`, while the application must derive `app.organization_id` from a verified organization membership and set it transaction-locally. Custom PostgreSQL session settings are not themselves authentication; SQL injection and broad grants remain threats. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
