@@ -196,6 +196,21 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 		}
 	}
 	switch kind {
+	case "contracts":
+		return contracts, nil
+	case "mappings":
+		return mappings, nil
+	case "usage":
+		return usage, nil
+	case "billing":
+		return billing, nil
+	default:
+		return credits, nil
+	}
+}
+func Import(d *Database, kind string, value any) ImportResult {
+	result := ImportResult{Kind: kind}
+	switch kind {
 	case "mappings":
 		for _, v := range value.([]CustomerMapping) {
 			found := false
@@ -212,21 +227,6 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 				result.Added++
 			}
 		}
-	case "contracts":
-		return contracts, nil
-	case "mappings":
-		return mappings, nil
-	case "usage":
-		return usage, nil
-	case "billing":
-		return billing, nil
-	default:
-		return credits, nil
-	}
-}
-func Import(d *Database, kind string, value any) ImportResult {
-	result := ImportResult{Kind: kind}
-	switch kind {
 	case "contracts":
 		for _, v := range value.([]Contract) {
 			found := false
