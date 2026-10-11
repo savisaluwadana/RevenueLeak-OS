@@ -15,6 +15,7 @@ The JSON API is same-origin. Private workspaces require the signed `rl_session` 
 | GET | /api/findings/export | Current findings CSV |
 | POST | /api/stripe/sync | Read-only invoice sync and saved scan |
 | POST | /api/demo/reset | Destructive reset, demo mode only |
+| GET | /api/coverage | `{gaps: [...]}`; source coverage warnings only (no monetary totals) |
 | GET | /api/scans | `{runs: [...], retention_limit: 25}`; summaries only |
 | GET | /api/scans/{id} | `{run: {...}}`; recorded sources and results |
 | GET | /api/scans/{id}/export | Download `{schema_version: "1", run: {...}}` as JSON |
@@ -22,3 +23,9 @@ The JSON API is same-origin. Private workspaces require the signed `rl_session` 
 `kind` is contracts, usage, billing or credits. Source CSV templates are in `samples/`. A finding status payload is `{"status":"reviewing","note":"..."}`; allowed statuses are new, reviewing, approved, false_positive and resolved.
 
 Saved-run routes require a private session and return `401` without it. Missing or expired runs return `404`; JSON errors have an `error` string. Run JSON responses use `Cache-Control: no-store`. Downloads include customer contracts and billing inputs. The source digest identifies the saved inputs, not financial collectibility or external certification.
+
+## Source coverage checks
+
+`GET /api/coverage` requires the same private session as findings, and returns a `gaps` array containing `id`, `customer_id`, `customer_name`, `period`, `metric`, `currency`, `monthly_minimum_cents`, `reason` and `explanation`. This endpoint does **not** declare any money recoverable. `GET /api/overview` includes `coverage_count` and each scan summary includes `coverage_gaps`. Saved runs include a snapshot of the coverage array used in that run.
+
+Only effective-dated contracts with positive **monthly minima** are examined, for the last 12 eligible closed months after the existing seven-day grace. A warning is produced when neither independent usage nor finalized paid/open billing exists for that customer/metric/month. One present source does not guarantee completeness, and draft/void billing is not considered finalized.
