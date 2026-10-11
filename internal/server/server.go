@@ -255,7 +255,7 @@ func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
 		}
 		byKind[f.Kind]++
 	}
-	respond(w, 200, map[string]any{"by_currency": byCurrency, "by_kind": byKind, "findings_count": len(d.Findings), "coverage_count": len(d.Coverage), "customers": countCustomers(d.Contracts), "last_scan": d.LastScan, "data_counts": map[string]int{"contracts": len(d.Contracts), "usage": len(d.Usage), "billing": len(d.Billing), "credits": len(d.Credits)}, "updated_at": d.UpdatedAt})
+	respond(w, 200, map[string]any{"by_currency": byCurrency, "by_kind": byKind, "findings_count": len(d.Findings), "coverage_count": len(d.Coverage), "customers": countCustomers(d.Contracts), "last_scan": d.LastScan, "data_counts": map[string]int{"contracts": len(d.Contracts), "mappings": len(d.Mappings), "usage": len(d.Usage), "billing": len(d.Billing), "credits": len(d.Credits)}, "updated_at": d.UpdatedAt})
 }
 func countCustomers(rows []core.Contract) int {
 	m := map[string]bool{}
@@ -272,7 +272,7 @@ func (s *Server) coverage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) datasets(w http.ResponseWriter, r *http.Request) {
 	d := s.Store.Snapshot()
-	respond(w, 200, map[string]any{"contracts": d.Contracts, "usage": d.Usage, "billing": d.Billing, "credits": d.Credits})
+	respond(w, 200, map[string]any{"contracts": d.Contracts, "mappings": d.Mappings, "usage": d.Usage, "billing": d.Billing, "credits": d.Credits})
 }
 func (s *Server) audit(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]any{"events": s.Store.Snapshot().Audit})
@@ -293,7 +293,7 @@ func (s *Server) scan(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) importCSV(w http.ResponseWriter, r *http.Request) {
 	kind := r.PathValue("kind")
-	if kind != "contracts" && kind != "usage" && kind != "billing" && kind != "credits" {
+	if kind != "contracts" && kind != "mappings" && kind != "usage" && kind != "billing" && kind != "credits" {
 		fail(w, 404, "Unknown dataset type")
 		return
 	}

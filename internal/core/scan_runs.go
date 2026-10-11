@@ -10,15 +10,16 @@ import (
 )
 
 const MaxSavedScans = 25
-const RuleVersion = "monthly-metered-v1+coverage-v1"
+const RuleVersion = "monthly-metered-v1+coverage-v1+customer-mapping-v1"
 
 // SourceSnapshot contains the precise inputs used for a reconciliation run.
 // It excludes passwords, sessions and connector credentials.
 type SourceSnapshot struct {
-	Contracts []Contract `json:"contracts"`
-	Usage     []Usage    `json:"usage"`
-	Billing   []Billing  `json:"billing"`
-	Credits   []Credit   `json:"credits"`
+	Contracts []Contract        `json:"contracts"`
+	Mappings  []CustomerMapping `json:"mappings,omitempty"`
+	Usage     []Usage           `json:"usage"`
+	Billing   []Billing         `json:"billing"`
+	Credits   []Credit          `json:"credits"`
 }
 
 type ScanRun struct {
@@ -67,6 +68,7 @@ func RunScan(d *Database, now time.Time, graceDays int, trigger string) ScanSumm
 	summary.RunID = fmt.Sprintf("scan_%08d", d.ScanSequence)
 	sources := SourceSnapshot{
 		Contracts: append([]Contract{}, d.Contracts...),
+		Mappings:  append([]CustomerMapping{}, d.Mappings...),
 		Usage:     append([]Usage{}, d.Usage...),
 		Billing:   append([]Billing{}, d.Billing...),
 		Credits:   append([]Credit{}, d.Credits...),

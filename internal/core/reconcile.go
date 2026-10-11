@@ -83,8 +83,9 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 		}
 		return a
 	}
+	aliases := mappingIndex(d.Mappings)
 	for _, u := range d.Usage {
-		a := get(pair{u.CustomerID, u.Period, u.Metric})
+		a := get(pair{mappedCustomer(aliases, "usage_csv", u.CustomerID), u.Period, u.Metric})
 		a.add(&a.usage, u.Quantity)
 		a.uIDs = append(a.uIDs, u.ID)
 		a.usageRecords = append(a.usageRecords, u)
@@ -93,7 +94,7 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 		if b.Status != "paid" && b.Status != "open" {
 			continue
 		}
-		a := get(pair{b.CustomerID, b.Period, b.Metric})
+		a := get(pair{mappedCustomer(aliases, billingSource(b.Source), b.CustomerID), b.Period, b.Metric})
 		// Currency reconciliation is deliberately deferred until the effective contract is selected.
 		a.invoiceIDs = append(a.invoiceIDs, b.InvoiceID)
 	}
@@ -101,12 +102,12 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 	billingByPair := map[pair][]Billing{}
 	for _, b := range d.Billing {
 		if b.Status == "paid" || b.Status == "open" {
-			k := pair{b.CustomerID, b.Period, b.Metric}
+			k := pair{mappedCustomer(aliases, billingSource(b.Source), b.CustomerID), b.Period, b.Metric}
 			billingByPair[k] = append(billingByPair[k], b)
 		}
 	}
 	for _, cr := range d.Credits {
-		k := pair{cr.CustomerID, cr.Period, cr.Metric}
+		k := pair{mappedCustomer(aliases, "credits_csv", cr.CustomerID), cr.Period, cr.Metric}
 		if a, ok := byPair[k]; ok {
 			a.add(&a.credits, cr.AmountCents)
 			a.creditRecords = append(a.creditRecords, cr)

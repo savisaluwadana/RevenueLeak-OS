@@ -35,6 +35,7 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 	}
 	required := map[string][]string{
 		"contracts": {"customer_id", "customer_name", "metric", "currency", "unit_price_cents", "included_units", "monthly_minimum_cents", "effective_from"},
+		"mappings":  {"source", "external_customer_id", "customer_id"},
 		"usage":     {"usage_id", "customer_id", "period", "metric", "quantity"},
 		"billing":   {"line_id", "invoice_id", "customer_id", "period", "metric", "quantity", "amount_cents", "currency", "status"},
 		"credits":   {"credit_id", "customer_id", "period", "metric", "amount_cents", "reason"},
@@ -72,6 +73,8 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 		return nil
 	}
 	contracts := []Contract{}
+	mappings := []CustomerMapping{}
+	seenMappings := map[string]string{}
 	usage := []Usage{}
 	billing := []Billing{}
 	credits := []Credit{}
@@ -98,6 +101,23 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 		}
 		fail := func(err error) (any, error) { return nil, fmt.Errorf("row %d: %w", line, err) }
 		switch kind {
+		case "mappings":
+			if e = nonempty(row, "source", "external_customer_id", "customer_id"); e != nil {
+				return fail(e)
+			}
+			source := strings.ToLower(get(row, "source"))
+			if source != "stripe" && source != "billing_csv" && source != "usage_csv" && source != "credits_csv" {
+				return fail(errors.New("source must be stripe, billing_csv, usage_csv, or credits_csv"))
+			}
+			if len(get(row, "external_customer_id")) > 255 || len(get(row, "customer_id")) > 255 {
+				return fail(errors.New("customer identifiers must be 255 characters or fewer"))
+			}
+			key := mappingKey(source, get(row, "external_customer_id"))
+			if canonical, exists := seenMappings[key]; exists && canonical != get(row, "customer_id") {
+				return fail(errors.New("conflicting customer mapping for the same source and external identifier"))
+			}
+			seenMappings[key] = get(row, "customer_id")
+			mappings = append(mappings, CustomerMapping{Source: source, ExternalCustomerID: get(row, "external_customer_id"), CustomerID: get(row, "customer_id")})
 		case "contracts":
 			if e = nonempty(row, "customer_id", "customer_name", "metric", "currency", "effective_from"); e != nil {
 				return fail(e)
@@ -178,6 +198,8 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 	switch kind {
 	case "contracts":
 		return contracts, nil
+	case "mappings":
+		return mappings, nil
 	case "usage":
 		return usage, nil
 	case "billing":
@@ -189,6 +211,22 @@ func ReadCSV(kind string, r io.Reader) (any, error) {
 func Import(d *Database, kind string, value any) ImportResult {
 	result := ImportResult{Kind: kind}
 	switch kind {
+	case "mappings":
+		for _, v := range value.([]CustomerMapping) {
+			found := false
+			for i, old := range d.Mappings {
+				if old.Source == v.Source && old.ExternalCustomerID == v.ExternalCustomerID {
+					d.Mappings[i] = v
+					found = true
+					result.Updated++
+					break
+				}
+			}
+			if !found {
+				d.Mappings = append(d.Mappings, v)
+				result.Added++
+			}
+		}
 	case "contracts":
 		for _, v := range value.([]Contract) {
 			found := false

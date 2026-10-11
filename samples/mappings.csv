@@ -1,0 +1,3 @@
+source,external_customer_id,customer_id
+stripe,cus_external_example,customer_contract_123
+usage_csv,usage_customer_example,customer_contract_123

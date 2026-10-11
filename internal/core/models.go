@@ -2,6 +2,15 @@ package core
 
 import "time"
 
+// CustomerMapping links one external source's customer identifier to the
+// canonical customer_id used by commercial contracts. Raw imported records
+// retain their original source IDs for forensic evidence.
+type CustomerMapping struct {
+	Source             string `json:"source"`
+	ExternalCustomerID string `json:"external_customer_id"`
+	CustomerID         string `json:"customer_id"`
+}
+
 type Contract struct {
 	CustomerID          string `json:"customer_id"`
 	CustomerName        string `json:"customer_name"`
@@ -86,20 +95,21 @@ type ScanSummary struct {
 	CoverageGaps       int    `json:"coverage_gaps"`
 }
 type Database struct {
-	Contracts    []Contract    `json:"contracts"`
-	Usage        []Usage       `json:"usage"`
-	Billing      []Billing     `json:"billing"`
-	Credits      []Credit      `json:"credits"`
-	Findings     []Finding     `json:"findings"`
-	Audit        []AuditEvent  `json:"audit"`
-	LastScan     ScanSummary   `json:"last_scan"`
-	UpdatedAt    string        `json:"updated_at"`
-	ScanRuns     []ScanRun     `json:"scan_runs"`
-	ScanSequence int64         `json:"scan_sequence"`
-	Coverage     []CoverageGap `json:"coverage"`
+	Contracts    []Contract        `json:"contracts"`
+	Mappings     []CustomerMapping `json:"mappings"`
+	Usage        []Usage           `json:"usage"`
+	Billing      []Billing         `json:"billing"`
+	Credits      []Credit          `json:"credits"`
+	Findings     []Finding         `json:"findings"`
+	Audit        []AuditEvent      `json:"audit"`
+	LastScan     ScanSummary       `json:"last_scan"`
+	UpdatedAt    string            `json:"updated_at"`
+	ScanRuns     []ScanRun         `json:"scan_runs"`
+	ScanSequence int64             `json:"scan_sequence"`
+	Coverage     []CoverageGap     `json:"coverage"`
 }
 
 func NewDatabase() Database {
-	return Database{Contracts: []Contract{}, Usage: []Usage{}, Billing: []Billing{}, Credits: []Credit{}, Findings: []Finding{}, Coverage: []CoverageGap{}, Audit: []AuditEvent{}}
+	return Database{Contracts: []Contract{}, Mappings: []CustomerMapping{}, Usage: []Usage{}, Billing: []Billing{}, Credits: []Credit{}, Findings: []Finding{}, Coverage: []CoverageGap{}, Audit: []AuditEvent{}}
 }
 func Stamp() string { return time.Now().UTC().Format(time.RFC3339) }

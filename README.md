@@ -28,6 +28,12 @@ go run ./cmd/server
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
 
+## Canonical customer ID mappings (pilot feature)
+
+Import [mappings.csv](samples/mappings.csv) on the **Data sources** page when different systems identify the same customer differently. Each mapping uses `source,external_customer_id,customer_id`: `source` must be `stripe`, `billing_csv`, `usage_csv`, or `credits_csv`; `customer_id` is the canonical ID in Contracts. The source field prevents accidentally treating identical IDs from unrelated providers as the same customer. Mappings are upserted by source plus external ID, and invalid/conflicting CSV rows are rejected.
+
+The application retains the **original source IDs** in raw imported records and saved evidence, with a snapshot of the mapping rules used for each scan. Changing mappings triggers recalculation, and may reopen or replace cases. Correctness still requires a finance operator to verify mappings and source completeness; this is not a fuzzy/entity-resolution AI service. A wrong mapping can silently change totals, so use synthetic or reviewed pilot data only.
+
 ## Opt-in automatic reconciliation (pilot feature)
 
 By default reconciliation is manual/on-import. Set `AUTO_SCAN_INTERVAL=24h` in the server environment to enable the built-in periodic closed-period audit (minimum 1h). The service checks at startup and at the configured interval, saves an audit run only when the UTC day, source fingerprint or rule version changes, and stops gracefully on SIGINT/SIGTERM. This does **not** ingest new external data, guarantee data freshness, or replace distributed job scheduling for production. Logs report failures; it does not send alerts yet. A manual CSV import continues to trigger its own reconciliation. See [development guide](docs/DEVELOPMENT.md).
@@ -52,7 +58,7 @@ Evidence downloads include customer contracts, usage, invoices and credits. Prot
 
 - Fully functioning web dashboard: currency-separated portfolio KPIs, billing-period impact, leak categories, searchable and filterable investigations, source uploads, export, activity log, setup and demo reset.
 - Go standard-library JSON API, session login, signed HttpOnly cookies, CSRF enforcement, bounded upload sizes, security headers and rate limiting for sign-in.
-- Four validated CSV sources: effective-dated rate cards, independently metered usage, finalized invoice lines and explicit service credits. Imports are keyed/upserted (retries do not duplicate the same ID).
+- Four validated financial CSV sources: effective-dated rate cards, independently metered usage, finalized invoice lines and explicit service credits. A fifth optional customer-ID mapping CSV aligns external provider identifiers to canonical contract customers. Imports are keyed/upserted (retries do not duplicate the same ID).
 - Deterministic reconciliation, supporting unit prices, included units, monthly minimums, paid/open invoice totals and explicit credits. It skips unfinished months (7-day grace), missing contracts, currency conflicts, draft/void invoices.
 - Evidence in each finding: source IDs, billed/expected minor currency units, explanation and editable investigation status/notes. Human approval is mandatory for recovery actions.
 - Optional server-side **read-only Stripe invoice synchronization** for explicitly mapped Price IDs. See below.
@@ -89,7 +95,7 @@ export STRIPE_PRICE_MAP='{"price_your_usage_price_id":"api_calls"}'
 
 Assign the key least-privilege read permissions to invoices and associated line items. The connector retrieves pages of invoices, fetches each invoice's line items, imports only paid/open invoices, explicitly mapped price IDs, supported currencies, and UTC full calendar-month lines. It subtracts reported line discount amounts and **does not create charges, invoices, refunds or payment intents**. Pagination is bounded; failure prevents partial persistence. Sync replaces only records previously imported by the Stripe source. Sync requires an explicit click.
 
-Customers in your contract/usage import must use the *same* `cus_...` IDs returned by Stripe. Invoice line metadata and contract prices are not inferred. Don't mix manual CSV billing and Stripe for the same line items, or your totals may double count. Check invoice-level adjustments and applied credits separately; this connector is intentionally conservative and is **not an accounting-grade comprehensive Stripe reconciliation**.
+Contract/usage records can use your own canonical customer IDs. If Stripe uses different `cus_...` IDs, import the optional [customer mapping CSV](samples/mappings.csv) first (`source=stripe`, external Stripe ID, canonical contract ID). Stripe records retain their original provider IDs in evidence; mappings are applied during reconciliation. Invoice line metadata and contract prices are not inferred. Don't mix manual CSV billing and Stripe for the same line items, or your totals may double count. Check invoice-level adjustments and applied credits separately; this connector is intentionally conservative and is **not an accounting-grade comprehensive Stripe reconciliation**.
 
 Stripe API background: [Invoices](https://docs.stripe.com/api/invoices), [Invoice lines](https://docs.stripe.com/api/invoice-line-items), [Restricted keys](https://docs.stripe.com/keys#limit-access), [Meter summaries and eventual consistency](https://docs.stripe.com/api/billing/meter-event-summary/list).
 

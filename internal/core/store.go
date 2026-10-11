@@ -29,6 +29,9 @@ func Open(path string) (*Store, error) {
 	if s.data.Contracts == nil {
 		s.data.Contracts = []Contract{}
 	}
+	if s.data.Mappings == nil {
+		s.data.Mappings = []CustomerMapping{}
+	}
 	if s.data.Usage == nil {
 		s.data.Usage = []Usage{}
 	}

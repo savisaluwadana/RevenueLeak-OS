@@ -37,12 +37,13 @@ func detectCoverageGaps(d *Database, now time.Time, graceDays int) []CoverageGap
 	// A finalized invoice OR a usage record provides evidence the pair is
 	// present. Draft/void invoices are not finalized and do not close the gap.
 	present := map[pair]bool{}
+	aliases := mappingIndex(d.Mappings)
 	for _, u := range d.Usage {
-		present[pair{u.CustomerID, u.Period, u.Metric}] = true
+		present[pair{mappedCustomer(aliases, "usage_csv", u.CustomerID), u.Period, u.Metric}] = true
 	}
 	for _, b := range d.Billing {
 		if b.Status == "paid" || b.Status == "open" {
-			present[pair{b.CustomerID, b.Period, b.Metric}] = true
+			present[pair{mappedCustomer(aliases, billingSource(b.Source), b.CustomerID), b.Period, b.Metric}] = true
 		}
 	}
 
