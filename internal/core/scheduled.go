@@ -20,6 +20,7 @@ func scheduledScanDue(d *Database, now time.Time, graceDays int) bool {
 	}
 	inputs := SourceSnapshot{
 		Contracts: d.Contracts,
+		Mappings:  d.Mappings,
 		Usage:     d.Usage,
 		Billing:   d.Billing,
 		Credits:   d.Credits,
