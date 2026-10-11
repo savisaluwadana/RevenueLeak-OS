@@ -57,6 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           docker run -d --rm --name revenueleak-postgres-ci \
+            -p 127.0.0.1:5433:5432 \
             -e POSTGRES_PASSWORD=local-ci-only \
             -e POSTGRES_DB=revenueleak_ci postgres:16
           trap 'docker stop revenueleak-postgres-ci >/dev/null 2>&1 || true' EXIT
@@ -73,6 +74,15 @@ jobs:
           docker exec -e DATABASE_URL="$dburl" revenueleak-postgres-ci bash /tmp/db/migrate.sh
           docker exec -i revenueleak-postgres-ci psql -X -v ON_ERROR_STOP=1 -1 \
             -U postgres -d revenueleak_ci < db/tests/tenant_isolation.sql
+          docker exec revenueleak-postgres-ci psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d revenueleak_ci \
+            -c "CREATE ROLE revenueleak_go_ci LOGIN PASSWORD 'local-ci-only';" \
+            -c "GRANT USAGE ON SCHEMA revenueleak TO revenueleak_go_ci;" \
+            -c "GRANT EXECUTE ON FUNCTION revenueleak.current_organization() TO revenueleak_go_ci;" \
+            -c "GRANT SELECT ON revenueleak.organizations TO revenueleak_go_ci;" \
+            -c "GRANT SELECT, INSERT, UPDATE ON revenueleak.workspace_documents TO revenueleak_go_ci;"
+          POSTGRES_TEST_URL='postgresql://revenueleak_go_ci:local-ci-only@127.0.0.1:5433/revenueleak_ci?sslmode=disable' \
+            go test -race -tags=postgres_integration ./internal/pgstore
           docker exec revenueleak-postgres-ci sh -c \
             'printf "\n-- checksum drift test\n" >> /tmp/db/migrations/0001_tenant_foundation.sql'
           if docker exec -e DATABASE_URL="$dburl" revenueleak-postgres-ci bash /tmp/db/migrate.sh; then
