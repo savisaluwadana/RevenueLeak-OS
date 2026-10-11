@@ -10,7 +10,7 @@ import (
 )
 
 const MaxSavedScans = 25
-const RuleVersion = "monthly-metered-v1"
+const RuleVersion = "monthly-metered-v1+coverage-v1"
 
 // SourceSnapshot contains the precise inputs used for a reconciliation run.
 // It excludes passwords, sessions and connector credentials.
@@ -30,6 +30,7 @@ type ScanRun struct {
 	SourceDigest string         `json:"source_digest"`
 	Sources      SourceSnapshot `json:"sources"`
 	Findings     []Finding      `json:"findings"`
+	Coverage     []CoverageGap  `json:"coverage"`
 }
 
 type ScanRunIndex struct {
@@ -76,7 +77,8 @@ func RunScan(d *Database, now time.Time, graceDays int, trigger string) ScanSumm
 		findings[i].EvidenceInvoiceIDs = append([]string{}, findings[i].EvidenceInvoiceIDs...)
 	}
 	run := ScanRun{ID: summary.RunID, RuleVersion: RuleVersion, GraceDays: graceDays, Trigger: trigger,
-		Summary: summary, SourceDigest: digest(sources), Sources: sources, Findings: findings}
+		Summary: summary, SourceDigest: digest(sources), Sources: sources, Findings: findings,
+		Coverage: append([]CoverageGap{}, d.Coverage...)}
 	d.ScanRuns = append([]ScanRun{run}, d.ScanRuns...)
 	if len(d.ScanRuns) > MaxSavedScans {
 		d.ScanRuns = append([]ScanRun{}, d.ScanRuns[:MaxSavedScans]...)

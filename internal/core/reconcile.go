@@ -199,6 +199,8 @@ func Scan(d *Database, now time.Time, graceDays int) ScanSummary {
 	sort.Slice(findings, func(i, j int) bool { return findings[i].PotentialCents > findings[j].PotentialCents })
 	d.Findings = findings
 	summary.Findings = len(findings)
+	d.Coverage = detectCoverageGaps(d, now, graceDays)
+	summary.CoverageGaps = len(d.Coverage)
 	d.LastScan = summary
 	return summary
 }

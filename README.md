@@ -28,6 +28,14 @@ go run ./cmd/server
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
 
+## Source coverage checks (pilot feature)
+
+The **Coverage checks** page checks the latest 12 eligible closed months (after the existing 7-day grace) for active monthly-minimum contract periods with **neither independent usage nor finalized invoice data**. Checks are derived from imported effective-dated contracts, and are updated on every scan/import. They have a separate authenticated `GET /api/coverage` endpoint and appear in saved scan evidence.
+
+**These are data-quality warnings, not financial claims.** The contractual minimum is displayed for context only; checks do **not** increase the potential discrepancy total or create recoverable revenue findings. A gap can mean missing imports, a paused/cancelled contract not yet reflected in source data, special billing arrangements, credits or an actual omitted invoice. Verify all these with finance. Paid/open invoice lines or independent usage close this specific *both-sources-missing* check; draft/void invoices do not. The check does not yet prove complete usage or invoice data when *some* records exist.
+
+Stripe remains optional. CSV imports and the core engine work without Stripe credentials. This does not implement automated recurring scans, multi-tenancy or a customer-ready billing integration marketplace.
+
 ## Saved reconciliation runs (v0.2)
 
 Every manual scan, CSV import, Stripe sync and demo seed now saves its inputs, calculated findings, rule version and SHA-256 input fingerprint in the same datastore transaction. Open **Saved runs → Inspect** to review an earlier result or download an evidence JSON bundle. The latest **25 runs** are retained; export important runs before they expire. A later source correction or review edit does not rewrite an earlier run. Scans that produce no findings are saved too.
@@ -117,7 +125,7 @@ The app uses **only the Go standard library** for the backend and browser-native
 - Single workspace; one local admin; JSON file persistence; no fine-grained role/tenant isolation or SSO.
 - Contract math is limited to a single monthly metered metric, per-unit price, allowance, and monthly minimum. No graduated tiers, prepaid drawdown, FX conversion, amendment approvals, annual commits, or tax reconciliation.
 - Complete independent usage and invoice imports are prerequisites. Missing usage, unmapped invoices, open/draft billing periods, credits, discount behaviors or unmodeled contracts may produce false positives or missed revenue.
-- Scans cover only customer/metric/month tuples present in a usage or paid/open billing record. A minimum commitment with *no* usage or billing record for that month will not be flagged.
+- **Monetary findings** cover only customer/metric/month tuples present in a usage or paid/open billing record. A minimum commitment with *no* usage or finalized billing is flagged as a **source coverage check**, not a monetary variance. Data gaps cannot establish debt or collectibility.
 - The Stripe connector only imports explicitly mapped monthly invoice lines (max 2000 invoices and 2000 lines per invoice per sync), not full billing-system state; there is no live meter-event ingestion or contract parser.
 - The live findings list is recomputed from current inputs. Earlier findings remain in the latest 25 saved run snapshots; this is bounded history, not an indefinitely retained case ledger. Audit logs and snapshots are not tamper-evident.
 - This software has not been independently penetration-tested, load-tested, or externally security-certified. Use synthetic data until your privacy, security and accounting requirements are reviewed.

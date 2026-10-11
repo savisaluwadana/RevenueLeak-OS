@@ -44,6 +44,9 @@ func Open(path string) (*Store, error) {
 	if s.data.ScanRuns == nil {
 		s.data.ScanRuns = []ScanRun{}
 	}
+	if s.data.Coverage == nil {
+		s.data.Coverage = []CoverageGap{}
+	}
 	if s.data.Audit == nil {
 		s.data.Audit = []AuditEvent{}
 	}

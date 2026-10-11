@@ -15,6 +15,7 @@ flowchart LR
  D --> F[Atomic workspace store]
  F --> G[Period reconciliation engine]
  G --> H[Evidence findings]
+ G --> L[Non-monetary source coverage gaps]
  H --> I[Finance investigation dashboard]
  I --> J[Review / approve / dismiss]
  J --> K[Audit activity]
@@ -37,7 +38,7 @@ The browser provides the dashboard and upload/review forms, communicating only w
 - A period is eligible only after its last day plus 7 full days (UTC). Current months are never flagged.
 - The applicable contract version is the latest effective start month covering the period. Contract validity is monthly, not daily.
 - The expected charge is `max(0, usage-included) * unit_rate`, floored by the minimum commitment and reduced by explicit credits.
-- A finding is generated **only if expected exceeds finalized billed amount**. Draft and void invoices are disregarded. Negative and foreign-currency invoice lines are skipped at import, and currency mismatches cause the comparison to be skipped.
+- A monetary finding is generated **only if expected exceeds finalized billed amount**. Separate **coverage warnings** are emitted for active minimum-commitment months with no independent usage or finalized invoice; these warnings cannot establish a collectible amount and do not affect monetary portfolio totals. Draft and void invoices are disregarded. Negative and foreign-currency invoice lines are skipped at import, and currency mismatches cause the comparison to be skipped.
 - Finding IDs are deterministic by customer/month/metric. Statuses survive only when that case's evidence fingerprint is unchanged. Changed evidence reopens reviewed cases; notes and first-seen timestamps remain.
 - Evidence includes stable source record IDs and numerical inputs used for the comparison. A finding status change cannot modify financial source data.
 - Corrections and monetary recoveries happen entirely outside this application. Review does not mean invoicing or collecting.
@@ -69,3 +70,9 @@ Runtime paths use `core.RunScan` inside `Store.Update`. Source mutation, reconci
 Runs contain all input contracts, usage, billing and credits, the result summary and findings, a rule version, trigger, source digest and sequence-based ID. The latest 25 runs are kept newest first. Run IDs are unique during that workspace's lifetime, but a destructive demo reset begins a new workspace history. Case fingerprints normalize record order by stable IDs so a row reorder does not invalidate review. An evidence fingerprint is an ordinary hash, not a digital signature.
 
 `GET /api/scans` returns summaries only. Detail and export endpoints require the same authenticated session as other private APIs and send `Cache-Control: no-store`. Source snapshots exclude environment credentials and sessions but retain customer/financial data. See RECONCILIATION-RUNS.md for retention and API.md for contracts.
+
+## Source coverage assurance (pilot)
+
+`internal/core/coverage.go` enumerates the 12 most recent eligible closed months after the configured grace period, bounded by each contract's effective interval. It selects the effective contract version per customer/metric/month and checks whether at least one independent usage record **or** finalized paid/open billing line exists. Months lacking both are stored as `CoverageGap` warnings, exposed at `GET /api/coverage`, and copied into saved scan history. Their contextual contract minimum is never added to the revenue discrepancy total.
+
+The warning means **data missing from this workspace**, not necessarily billing omitted at the source. Unrecorded cancellation, incomplete provider synchronization, invoice adjustments, or commercial exceptions may explain it. A single usage or invoice line satisfies the narrow both-absent test; separate future rules should check full-source completeness, ingestion freshness, and invoices still in progress. No payment or correction action is authorized by these warnings.
