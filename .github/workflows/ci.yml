@@ -47,6 +47,38 @@ jobs:
         env:
           REVENUELEAK_TEST_BINARY: ${{ runner.temp }}/revenueleak
         run: npm run test:browser
+  postgres-foundation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PostgreSQL migration runner syntax
+        run: bash -n db/migrate.sh
+      - name: Apply migrations and test tenant isolation
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name revenueleak-postgres-ci \
+            -e POSTGRES_PASSWORD=local-ci-only \
+            -e POSTGRES_DB=revenueleak_ci postgres:16
+          trap 'docker stop revenueleak-postgres-ci >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..45}; do
+            if docker exec revenueleak-postgres-ci pg_isready -U postgres -d revenueleak_ci >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec revenueleak-postgres-ci pg_isready -U postgres -d revenueleak_ci
+          docker cp db revenueleak-postgres-ci:/tmp/db
+          dburl='postgresql://postgres:local-ci-only@127.0.0.1:5432/revenueleak_ci?sslmode=disable'
+          docker exec -e DATABASE_URL="$dburl" revenueleak-postgres-ci bash /tmp/db/migrate.sh
+          docker exec -e DATABASE_URL="$dburl" revenueleak-postgres-ci bash /tmp/db/migrate.sh
+          docker exec -i revenueleak-postgres-ci psql -X -v ON_ERROR_STOP=1 -1 \
+            -U postgres -d revenueleak_ci < db/tests/tenant_isolation.sql
+          docker exec revenueleak-postgres-ci sh -c \
+            'printf "\n-- checksum drift test\n" >> /tmp/db/migrations/0001_tenant_foundation.sql'
+          if docker exec -e DATABASE_URL="$dburl" revenueleak-postgres-ci bash /tmp/db/migrate.sh; then
+            echo 'Migration checksum change was incorrectly accepted' >&2
+            exit 1
+          fi
   container:
     runs-on: ubuntu-24.04
     steps:
