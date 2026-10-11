@@ -19,11 +19,12 @@
 - [x] Standalone repository, root-level CI, executable launcher and migration notes.
 - [x] Saved run inputs/results, evidence JSON exports, 25-run retention and history UI.
 - [x] Evidence changes reopen reviewed cases; regression tests cover restart, rollback and snapshot stability.
+- [x] Non-monetary source coverage checks for missing minimum-commitment periods, bounded historical window, authenticated API, dashboard and saved evidence.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.
 
 ## Phase 1: first paid pilot
 
-1. Recruit 3–5 design partners using Stripe + usage-based billing and a clear authoritative product-usage export.
+1. Recruit 3–5 design partners using **any billing system or CSV**, with a clear independent authoritative product-usage export. Stripe remains an optional, read-only connector.
 2. Choose one exact metric and contract interpretation per customer; sign written data-processing terms and define retention controls.
 3. Run the engine **offline/read-only** against mutually confirmed closed billing periods; have customers label every finding (real, duplicate, credit, timing, disputed, cannot verify).
 4. Track false-positive rate, verified recoverable amount, time to validate, and any cash collected only *after* finance confirms invoices and collections.
@@ -66,9 +67,13 @@ This release cannot accurately reconcile graduated tiering, minimums shared acro
 ## Next engineering milestone
 
 1. Introduce a repository interface and PostgreSQL-backed transactional persistence with versioned migrations; retain the local demo adapter.
-2. Add organizations, identities and memberships before exposing multiple customer workspaces.
+2. Add organizations, identities and memberships before exposing multiple customer workspaces; enforce tenant scoping for all coverage checks and exports.
 3. Verify OIDC login, refresh/logout and per-role access across every import, run, finding and export route.
 4. Move connector ingestion into durable jobs with checkpoints, concurrency limits and retries.
 5. Add reviewed contract fixtures for tiering and source completeness before expanding monetary rules.
 
 Current saved runs are a pilot foundation, not completion of the production foundation phase. Built-in SSO, PostgreSQL, tenant isolation, live customer integration and production certification remain unimplemented.
+
+## Commercial operating plan
+
+See [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) for the $10k MRR validation hypothesis, initial customer profile, paid-pilot scope, tiered-pricing experiments and release gates. Product strategy and proposed prices are hypotheses, not verified sales or an implemented subscription checkout.
