@@ -26,7 +26,9 @@ func billingSource(raw string) string {
 	if raw == "stripe" {
 		return "stripe"
 	}
-	// Legacy CSV invoice rows use source="csv"; unfamiliar sources must be
-	// treated as CSV only until explicitly supported and validated.
-	return "billing_csv"
+	if raw == "csv" || raw == "" {
+		return "billing_csv"
+	}
+	// Never apply CSV mappings to synthetic or unknown providers.
+	return "unmapped_source"
 }
