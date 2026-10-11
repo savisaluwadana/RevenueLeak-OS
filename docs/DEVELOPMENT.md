@@ -40,3 +40,7 @@ Make development changes on a feature branch and open a PR. Keep roadmap and sup
 ## Optional automatic audits
 
 `AUTO_SCAN_INTERVAL=24h` enables single-process periodic reconciliation, with a minimum interval of one hour. The initial due-check is performed when the server starts. Duplicate same-day scans with identical source digests and rule versions do not create another saved run. Re-checks are triggered when source data changes or a new UTC date begins. This does not fetch fresh provider data or guarantee billing completeness. Avoid running more than one instance with the JSON datastore; the production design requires durable distributed jobs, PostgreSQL and tenant isolation. Stop the process using SIGTERM/SIGINT to exercise graceful shutdown.
+
+## PostgreSQL schema checks (not the running data store)
+
+For a **disposable** PostgreSQL 15+ database, set `DATABASE_URL` to a migration-owner connection and run `bash db/migrate.sh`. The script requires `psql` and a SHA-256 command. CI runs this migration twice, rejects checksum drift and executes the two-organization RLS test fixture in `db/tests/tenant_isolation.sql` using PostgreSQL 16. The local app remains independent of Postgres and keeps storing data in the single-workspace JSON file. See [PostgreSQL foundation](POSTGRESQL-FOUNDATION.md) for limitations and the required app-side authorization work.

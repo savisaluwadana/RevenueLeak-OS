@@ -28,6 +28,12 @@ go run ./cmd/server
 
 Use a TLS reverse proxy for remote access, do not publicly expose the Go service, and keep server secrets out of Git. You can also run `docker compose up --build` after creating your own `.env` from `.env.example`. The Compose port is bound to localhost by default.
 
+## PostgreSQL tenant schema (development foundation only)
+
+The repository now contains a versioned PostgreSQL schema, a checksum-verified migration runner, and CI tests for row-level security and cross-tenant foreign keys. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
+
+**The running server still uses the local JSON workspace.** The PostgreSQL schema has not been integrated with the Go API, identities, or customer accounts. Do not treat it as production multi-tenancy or migrate real customer data to it yet.
+
 ## Canonical customer ID mappings (pilot feature)
 
 Import [mappings.csv](samples/mappings.csv) on the **Data sources** page when different systems identify the same customer differently. Each mapping uses `source,external_customer_id,customer_id`: `source` must be `stripe`, `billing_csv`, `usage_csv`, or `credits_csv`; `customer_id` is the canonical ID in Contracts. The source field prevents accidentally treating identical IDs from unrelated providers as the same customer. Mappings are upserted by source plus external ID, and invalid/conflicting CSV rows are rejected.
@@ -44,7 +50,7 @@ The **Coverage checks** page checks the latest 12 eligible closed months (after 
 
 **These are data-quality warnings, not financial claims.** The contractual minimum is displayed for context only; checks do **not** increase the potential discrepancy total or create recoverable revenue findings. A gap can mean missing imports, a paused/cancelled contract not yet reflected in source data, special billing arrangements, credits or an actual omitted invoice. Verify all these with finance. Paid/open invoice lines or independent usage close this specific *both-sources-missing* check; draft/void invoices do not. The check does not yet prove complete usage or invoice data when *some* records exist.
 
-Stripe remains optional. CSV imports and the core engine work without Stripe credentials. This does not implement automated recurring scans, multi-tenancy or a customer-ready billing integration marketplace.
+Stripe remains optional. CSV imports and the core engine work without Stripe credentials. This does not implement distributed job scheduling, production multi-tenancy or a customer-ready billing integration marketplace.
 
 ## Saved reconciliation runs (v0.2)
 

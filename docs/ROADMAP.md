@@ -22,6 +22,8 @@
 - [x] Non-monetary source coverage checks for missing minimum-commitment periods, bounded historical window, authenticated API, dashboard and saved evidence.
 - [x] Optional single-process periodic reconciliation (`AUTO_SCAN_INTERVAL`), safe duplicate-scan suppression and cancellation tests.
 - [x] Source-scoped CSV customer identity mapping for billing, usage and credits, with saved source provenance and regression tests.
+- [x] PostgreSQL 16 tenant schema, migration checksum ledger, enforced RLS policies and cross-tenant SQL tests (schema only, not wired to the Go API).
+- [x] Correct scheduled-scan fingerprint to include customer ID mapping changes.
 - [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
 - [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
 - [ ] Multi-tenant production security, payment-system certification and customer-validated ledger correctness.
@@ -39,7 +41,7 @@
 ## Phase 2: production foundation
 
 - Organizations/users, SSO/OIDC, RBAC and segregated tenancy.
-- PostgreSQL transactional persistence, migrations, backups and tested restore procedure.
+- PostgreSQL transactional persistence **still missing**; SQL schema/migration runner and disposable DB tenant-isolation CI checks are implemented, but the Go API, backup and restore are not migrated.
 - Encrypted connector credentials with KMS, rotation and OAuth wherever supported.
 - Asynchronous queues, retry/DLQ, idempotency checks, provider webhook signing and source-level checkpointing.
 - Scale the pilot's saved run snapshots into relational, versioned reconciliation records with configurable retention, replay verification and tamper-evident approvals.
@@ -70,13 +72,13 @@ This release cannot accurately reconcile graduated tiering, minimums shared acro
 
 ## Next engineering milestone
 
-1. Introduce a repository interface and PostgreSQL-backed transactional persistence with versioned migrations; retain the local demo adapter.
+1. Introduce an error-returning repository interface and PostgreSQL-backed transactional persistence, **connecting** the already versioned SQL schema; retain the local JSON demo adapter.
 2. Add organizations, identities and memberships before exposing multiple customer workspaces; enforce tenant scoping for all coverage checks and exports.
 3. Verify OIDC login, refresh/logout and per-role access across every import, run, finding and export route.
 4. Move connector ingestion into durable jobs with checkpoints, concurrency limits and retries.
 5. Add reviewed contract fixtures for tiering and source completeness before expanding monetary rules.
 
-Current saved runs are a pilot foundation, not completion of the production foundation phase. Built-in SSO, PostgreSQL, tenant isolation, live customer integration and production certification remain unimplemented.
+Current saved runs are a pilot foundation, not completion of the production foundation phase. Built-in SSO, PostgreSQL-backed **application persistence**, end-to-end tenant authorization, live customer integration and production certification remain unimplemented.
 
 ## Commercial operating plan
 
