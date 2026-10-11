@@ -13,7 +13,12 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Go format check
-        run: test -z "$(gofmt -l .)"
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
+            exit 1
+          fi
       - run: go vet ./...
       - run: go test -race ./...
       - run: go build -o "$RUNNER_TEMP/revenueleak" ./cmd/server
