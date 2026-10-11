@@ -15,11 +15,11 @@ const RuleVersion = "monthly-metered-v1+coverage-v1+customer-mapping-v1"
 // SourceSnapshot contains the precise inputs used for a reconciliation run.
 // It excludes passwords, sessions and connector credentials.
 type SourceSnapshot struct {
-	Contracts []Contract `json:"contracts"`
+	Contracts []Contract        `json:"contracts"`
 	Mappings  []CustomerMapping `json:"mappings,omitempty"`
-	Usage     []Usage    `json:"usage"`
-	Billing   []Billing  `json:"billing"`
-	Credits   []Credit   `json:"credits"`
+	Usage     []Usage           `json:"usage"`
+	Billing   []Billing         `json:"billing"`
+	Credits   []Credit          `json:"credits"`
 }
 
 type ScanRun struct {
