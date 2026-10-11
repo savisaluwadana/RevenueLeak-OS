@@ -95,18 +95,18 @@ type ScanSummary struct {
 	CoverageGaps       int    `json:"coverage_gaps"`
 }
 type Database struct {
-	Contracts    []Contract    `json:"contracts"`
+	Contracts    []Contract        `json:"contracts"`
 	Mappings     []CustomerMapping `json:"mappings"`
-	Usage        []Usage       `json:"usage"`
-	Billing      []Billing     `json:"billing"`
-	Credits      []Credit      `json:"credits"`
-	Findings     []Finding     `json:"findings"`
-	Audit        []AuditEvent  `json:"audit"`
-	LastScan     ScanSummary   `json:"last_scan"`
-	UpdatedAt    string        `json:"updated_at"`
-	ScanRuns     []ScanRun     `json:"scan_runs"`
-	ScanSequence int64         `json:"scan_sequence"`
-	Coverage     []CoverageGap `json:"coverage"`
+	Usage        []Usage           `json:"usage"`
+	Billing      []Billing         `json:"billing"`
+	Credits      []Credit          `json:"credits"`
+	Findings     []Finding         `json:"findings"`
+	Audit        []AuditEvent      `json:"audit"`
+	LastScan     ScanSummary       `json:"last_scan"`
+	UpdatedAt    string            `json:"updated_at"`
+	ScanRuns     []ScanRun         `json:"scan_runs"`
+	ScanSequence int64             `json:"scan_sequence"`
+	Coverage     []CoverageGap     `json:"coverage"`
 }
 
 func NewDatabase() Database {
