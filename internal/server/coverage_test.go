@@ -20,15 +20,23 @@ func TestCoverageRoutePrivateAndSeparateFromRevenue(t *testing.T) {
 	h := s.Router()
 	unauth := httptest.NewRecorder()
 	h.ServeHTTP(unauth, httptest.NewRequest("GET", "/api/coverage", nil))
-	if unauth.Code != 401 { t.Fatalf("coverage publicly accessible: %d", unauth.Code) }
+	if unauth.Code != 401 {
+		t.Fatalf("coverage publicly accessible: %d", unauth.Code)
+	}
 	req := httptest.NewRequest("GET", "/api/coverage", nil)
 	req.AddCookie(makeCookie(s))
 	res := httptest.NewRecorder()
 	h.ServeHTTP(res, req)
-	if res.Code != 200 { t.Fatalf("coverage API failed: %d %s", res.Code, res.Body.String()) }
+	if res.Code != 200 {
+		t.Fatalf("coverage API failed: %d %s", res.Code, res.Body.String())
+	}
 	var body struct { Gaps []core.CoverageGap `json:"gaps"` }
-	if err := json.Unmarshal(res.Body.Bytes(), &body); err != nil { t.Fatal(err) }
-	if len(body.Gaps) != 1 || body.Gaps[0].MonthlyMinimumCents != 5000 { t.Fatalf("wrong gaps: %+v", body) }
+	if err := json.Unmarshal(res.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Gaps) != 1 || body.Gaps[0].MonthlyMinimumCents != 5000 {
+		t.Fatalf("wrong gaps: %+v", body)
+	}
 	snapshot := s.Store.Snapshot()
 	if len(snapshot.Findings) != 0 || snapshot.LastScan.Findings != 0 || snapshot.LastScan.CoverageGaps != 1 {
 		t.Fatalf("coverage inflated revenue: %+v", snapshot.LastScan)
