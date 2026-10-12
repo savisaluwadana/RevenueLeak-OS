@@ -60,3 +60,9 @@ Use `go run ./cmd/migrate-pilot -source path/to/revenueleak.json` to inspect a p
 ## Private PostgreSQL backup-and-restore integration
 
 `go run ./cmd/backup-workspace -output /restricted/directory/unique-backup.json` exports the provisioned private `DATABASE_URL` + `WORKSPACE_ID` state into a never-overwritten mode-0600 JSON backup with a verified SHA-256 digest. Use the one-time `cmd/migrate-pilot` import against a **fresh organization**, not the source, to test recovery. CI provisions separate PostgreSQL fixture organizations and runs an end-to-end `postgres_integration` test of backup + re-import without overwriting live data. The backup is plaintext JSON and must be encrypted by the operator; it is not managed cloud backup/PITR.
+
+## Finance recovery assertion feature
+
+The finding drawer includes operator-entered confirmation and recorded collection assertions, distinct from calculated potential revenue leakage. The API routes are GET `/api/recoveries` and POST `/api/findings/{id}/recovery`. See `internal/core/recovery.go`, `internal/core/recovery_test.go`, `internal/server/recovery.go` and the authenticated/CSRF tests. The app rejects duplicate idempotency requests with altered content, outdated evidence fingerprints, unapproved findings, over-confirmation and over-collection. Reconciliation does **not** treat these records as billable invoice sources. The underlying JSON/JSONB remains mutable by storage administrators; no bank verification or individual user attribution exists.
+
+The full [documentation index](README.md) links product handbook, architecture diagrams, data design, workflows, agent/connector proposal, security runbooks, testing and implementation plan. Updating any feature requires code/tests first, then reflecting current-versus-planned status in the reference docs.

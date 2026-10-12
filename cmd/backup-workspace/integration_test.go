@@ -31,6 +31,7 @@ func TestBackedUpWorkspaceCanRestoreIntoFreshOrganization(t *testing.T) {
 	if err := source.Update(func(d *core.Database) error {
 		d.Contracts = []core.Contract{{CustomerID: "c1", CustomerName: "Backed up customer", Metric: "tokens", Currency: "USD", UnitPriceCents: 25, EffectiveFrom: "2026-09"}}
 		d.Findings = []core.Finding{{ID: "case-1", CustomerID: "c1", Status: "reviewing", Note: "retain original review notes"}}
+		d.Recoveries = []core.RecoveryEntry{{ID: "rec_fixture", FindingID: "case-1", CustomerID: "c1", Currency: "USD", Action: "collected", AmountCents: 100, Note: "Operator-reported amount preserved in backup", At: "2026-10-12T01:00:00Z"}}
 		d.ScanSequence = 8
 		d.ScanRuns = []core.ScanRun{{ID: "scan_00000008", Trigger: "manual", RuleVersion: core.RuleVersion}}
 		return nil

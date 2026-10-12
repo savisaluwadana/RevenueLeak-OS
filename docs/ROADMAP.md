@@ -28,6 +28,8 @@
 - [x] Experimental PostgreSQL JSONB workspace adapter with RLS, transactional updates, startup role checks and two-workspace integration tests.
 - [x] Assisted, one-time JSON-pilot to PostgreSQL JSONB import CLI with dry-run, no-overwrite guards, read-back digest and live migration tests.
 - [x] PostgreSQL private-workspace financial backup/export CLI with mode-0600 no-clobber publication, integrity hash and fresh-org recovery test.
+- [x] Pilot finance assertions, kept separate from calculated gaps: approved-finding confirmations and operator-recorded collections, idempotency, evidence invalidation and API/UI tests. Not independently verified cash or dual approval.
+- [x] Complete current-versus-target architecture, ER diagrams, feature inventory, workflows, integration/agent specification, operations/security, test and implementation references. See [docs index](README.md).
 - [ ] Production backup encryption, managed database PITR, scheduled retention, tested recovery targets and independent disaster-recovery review.
 - [ ] Production-normalized relational read/write paths, OIDC membership authorization, data migration and backup/restore drills.
 - [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
