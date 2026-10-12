@@ -107,9 +107,10 @@ type Database struct {
 	ScanRuns     []ScanRun         `json:"scan_runs"`
 	ScanSequence int64             `json:"scan_sequence"`
 	Coverage     []CoverageGap     `json:"coverage"`
+	Recoveries   []RecoveryEntry   `json:"recoveries"`
 }
 
 func NewDatabase() Database {
-	return Database{Contracts: []Contract{}, Mappings: []CustomerMapping{}, Usage: []Usage{}, Billing: []Billing{}, Credits: []Credit{}, Findings: []Finding{}, Coverage: []CoverageGap{}, Audit: []AuditEvent{}}
+	return Database{Contracts: []Contract{}, Mappings: []CustomerMapping{}, Usage: []Usage{}, Billing: []Billing{}, Credits: []Credit{}, Findings: []Finding{}, Coverage: []CoverageGap{}, Recoveries: []RecoveryEntry{}, Audit: []AuditEvent{}}
 }
 func Stamp() string { return time.Now().UTC().Format(time.RFC3339) }
