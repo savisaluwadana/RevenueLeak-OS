@@ -78,7 +78,7 @@ func TestRecoveryRoutesRequireSessionCSRFAndEvidence(t *testing.T) {
 		t.Fatalf("recovery audit read failed: %d %s", res.Code, res.Body.String())
 	}
 	var result struct {
-		Events []core.RecoveryEntry                `json:"events"`
+		Events []core.RecoveryEntry                   `json:"events"`
 		Totals map[string]core.RecoveryCurrencyTotals `json:"totals_by_currency"`
 	}
 	if err := json.Unmarshal(res.Body.Bytes(), &result); err != nil {
