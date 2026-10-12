@@ -52,3 +52,7 @@ The HTTP server and scheduled scanner now depend on the `core.Repository` interf
 ## PostgreSQL private workspace integration tests
 
 Run `go test -race -tags=postgres_integration ./internal/pgstore` against a disposable PostgreSQL 16 database after migrations and fixture setup. Set `POSTGRES_TEST_URL` to a non-superuser database login with SELECT on organizations and SELECT/INSERT/UPDATE on workspace_documents, plus schema/function usage. The GitHub workflow provisions two test organizations and exercises database-backed storage separation, rollback and persistence automatically. These tests do not cover multi-user HTTP authorization or production backup/restore.
+
+## One-time pilot data migration
+
+Use `go run ./cmd/migrate-pilot -source path/to/revenueleak.json` to inspect a paused pilot's JSON snapshot in **dry-run** mode. Explicit `-apply` additionally requires `DATABASE_URL` and `WORKSPACE_ID` for a previously provisioned and uninitialized private PostgreSQL organization. Take backups and stop all writers before applying. The CLI rejects overwrites and verifies the imported snapshot by reading it back and comparing SHA-256. For operational setup and recovery precautions, see [PostgreSQL foundation](POSTGRESQL-FOUNDATION.md#one-time-import-from-an-existing-json-pilot). PostgreSQL integration tests validate the import under the dedicated CI database role; no normalized relational conversion or multi-tenant session authorization is involved.
