@@ -127,7 +127,7 @@ func RecordRecovery(d *Database, findingID string, in RecoveryInput, now time.Ti
 type RecoveryCurrencyTotals struct {
 	ConfirmedCurrentCents  int64 `json:"confirmed_current_cents"`
 	CollectedRecordedCents int64 `json:"collected_recorded_cents"`
-	NeedsReviewCount        int   `json:"needs_review_count"`
+	NeedsReviewCount       int   `json:"needs_review_count"`
 }
 
 // RecoveryTotals returns separately labeled operator assertions; it does not
