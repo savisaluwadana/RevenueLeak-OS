@@ -56,3 +56,7 @@ Run `go test -race -tags=postgres_integration ./internal/pgstore` against a disp
 ## One-time pilot data migration
 
 Use `go run ./cmd/migrate-pilot -source path/to/revenueleak.json` to inspect a paused pilot's JSON snapshot in **dry-run** mode. Explicit `-apply` additionally requires `DATABASE_URL` and `WORKSPACE_ID` for a previously provisioned and uninitialized private PostgreSQL organization. Take backups and stop all writers before applying. The CLI rejects overwrites and verifies the imported snapshot by reading it back and comparing SHA-256. For operational setup and recovery precautions, see [PostgreSQL foundation](POSTGRESQL-FOUNDATION.md#one-time-import-from-an-existing-json-pilot). PostgreSQL integration tests validate the import under the dedicated CI database role; no normalized relational conversion or multi-tenant session authorization is involved.
+
+## Private PostgreSQL backup-and-restore integration
+
+`go run ./cmd/backup-workspace -output /restricted/directory/unique-backup.json` exports the provisioned private `DATABASE_URL` + `WORKSPACE_ID` state into a never-overwritten mode-0600 JSON backup with a verified SHA-256 digest. Use the one-time `cmd/migrate-pilot` import against a **fresh organization**, not the source, to test recovery. CI provisions separate PostgreSQL fixture organizations and runs an end-to-end `postgres_integration` test of backup + re-import without overwriting live data. The backup is plaintext JSON and must be encrypted by the operator; it is not managed cloud backup/PITR.
