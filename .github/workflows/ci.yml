@@ -17,6 +17,7 @@ jobs:
           unformatted="$(gofmt -l .)"
           if [ -n "$unformatted" ]; then
             printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
+            gofmt -d .
             exit 1
           fi
       - run: go vet ./...
