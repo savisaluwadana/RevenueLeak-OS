@@ -59,7 +59,9 @@ func TestLoadSnapshotPreservesEvidenceAndCanonicalHash(t *testing.T) {
 func TestLoadSnapshotRejectsUnsafeOrInvalidSources(t *testing.T) {
 	dir := t.TempDir()
 	ok := fixture(t)
-	bad := []struct { name, content string }{
+	bad := []struct {
+		name, content string
+	}{
 		{"empty", ""},
 		{"null", "null"},
 		{"trailing", "{}{}"},
