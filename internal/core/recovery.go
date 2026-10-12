@@ -143,7 +143,7 @@ func RecoveryTotals(d Database) map[string]RecoveryCurrencyTotals {
 	for _, event := range d.Recoveries {
 		t := out[event.Currency]
 		f, ok := findings[event.FindingID]
-		current := ok && f.EvidenceDigest == event.EvidenceDigest
+		current := ok && f.EvidenceDigest == event.EvidenceDigest && (f.Status == "approved" || f.Status == "resolved")
 		switch event.Action {
 		case "confirmed":
 			if current && event.AmountCents > 0 && t.ConfirmedCurrentCents <= math.MaxInt64-event.AmountCents {
