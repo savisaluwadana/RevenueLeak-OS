@@ -21,6 +21,8 @@ RevenueLeak OS is a **provider-neutral, read-only revenue assurance and preventi
 | Opt-in PostgreSQL private-workspace persistence | Implemented with JSONB snapshots, transaction locking and read errors; no shared-customer tenant auth |
 | Assisted JSON pilot import | Implemented for fresh private PostgreSQL JSONB workspace with read-back verification; no normalized relational conversion |
 | Private PostgreSQL backup and fresh-org restoration | Implemented as manual restricted JSON export and guarded import with CI recovery test; not encrypted or automated PITR |
+| Operator confirmation and reported collection ledger | Implemented in the single-admin pilot with evidence fingerprints and amount limits; NOT independently verified cash or dual approval |
+| Human-attributed maker/checker and provider-verified collections | Not implemented |
 | Production relational repository, job queue, SSO, credential vault | Not implemented |
 | Opt-in periodic scans with same-day deduplication | Implemented in single-process pilot; no distributed scheduler or provider refresh |
 | Provider-specific canonical customer ID mappings | Implemented as explicit CSV import with historical provenance; no automatic matching/approval |
