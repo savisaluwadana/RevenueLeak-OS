@@ -85,6 +85,28 @@ go run ./cmd/migrate-pilot -source ./data/revenueleak.json -apply
 
 **Limitations:** This is an assisted *one-time private-pilot cutover*, not zero-downtime migration, disaster-recovery validation or a bidirectional synchronization mechanism. The process cannot guarantee that the source was not externally modified after it was read; stop all writers. It preserves the current pilot history cap of 25 runs and inherits the financial-rule limitations described in `README.md`. Do not use it to combine customers or enable shared-tenant hosting.
 
+## Private-workspace backup and test restore
+
+The `cmd/backup-workspace` tool exports the **current one-organization PostgreSQL JSONB state** to a local JSON backup. It reads through the unprivileged, tenant-scoped runtime adapter, writes a temporary mode-`0600` file, fsyncs it, verifies the serialized snapshot, and publishes the final backup with an atomic **no-overwrite** hard link. If the output filename or symlink already exists, the command refuses to replace it.
+
+```bash
+# Use the private workspace's runtime DATABASE_URL and WORKSPACE_ID.
+mkdir -m 700 -p /secure/revenueleak-backups
+go run ./cmd/backup-workspace -output /secure/revenueleak-backups/workspace-2026-10-12.json
+```
+
+**Sensitive data warning:** This backup contains contracts, customer and invoice identifiers, investigation notes, source mappings, and saved evidence, without application-level encryption. Never commit it to Git, paste it into issues, or store it unencrypted on shared cloud drives. Encrypt it using your organization-approved backup solution, apply least-privilege file access, and keep an off-site copy. The `0600` file mode is **not encryption**.
+
+To prove recoverability, create a separate **fresh provisioned organization** with an unprivileged runtime role, then validate the archive locally and import it with the guarded tool:
+
+```bash
+go run ./cmd/migrate-pilot -source /secure/revenueleak-backups/workspace-2026-10-12.json
+# Point DATABASE_URL and WORKSPACE_ID at the NEW empty organization:
+go run ./cmd/migrate-pilot -source /secure/revenueleak-backups/workspace-2026-10-12.json -apply
+```
+
+After import, compare the source and recovery SHA-256 values and manually review recent findings, evidence exports and review notes. Restoring **over an initialized workspace is deliberately unsupported**: import into a new organization and perform a controlled operational cutover. This is a first recovery drill, **not** managed PostgreSQL PITR, whole-database recovery, an automated retention policy, or a production RTO/RPO guarantee.
+
 ## Migration runner and CI guarantees
 
 The `db/migrate.sh` script uses a private `schema_migrations` ledger with SHA-256 checksums; each SQL migration and its ledger insert occur in one PostgreSQL transaction. Identical reruns are skipped; changed previously applied files are rejected. No destructive automatic down migration is provided—back up and test restore before an upgrade.
@@ -98,7 +120,7 @@ CI provisions a disposable PostgreSQL 16 database and verifies:
 
 ## Security and product limitations
 
-**Do not deploy this as a shared-customer SaaS yet.** The process is configured for exactly one trusted organization ID at startup, and the app uses one administrator credential. There is no org-picker, user membership verification, OIDC, RBAC, SCIM, per-user approval attribution, tenant-aware rate limiting, encrypted connector vault, JSON-to-relational migration, scheduled distributed jobs or audited disaster recovery.
+**Do not deploy this as a shared-customer SaaS yet.** The process is configured for exactly one trusted organization ID at startup, and the app uses one administrator credential. There is no org-picker, user membership verification, OIDC, RBAC, SCIM, per-user approval attribution, tenant-aware rate limiting, encrypted connector vault, JSON-to-relational migration, scheduled distributed jobs or independently audited disaster recovery.
 
 `app.organization_id` is a transaction-local PostgreSQL setting, chosen from server configuration here. A future multi-tenant service must derive it from a **verified** session and organization membership for each request, never from an untrusted header or browser parameter. PostgreSQL GUC settings are not authentication; database SQL injection can weaken this boundary. Use parameterized SQL, strict runtime privileges, and independent tenant authorization checks.
 
