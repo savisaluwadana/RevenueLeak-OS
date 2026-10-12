@@ -4,6 +4,16 @@
 
 ![Status](https://img.shields.io/badge/release-0.2.0_pilot-green)
 
+## Complete documentation and architecture
+
+Start with the **[Documentation index](docs/README.md)**. The expanded references cover the [product's full feature inventory](docs/PRODUCT-HANDBOOK.md), [implemented vs target architecture with diagrams](docs/ARCHITECTURE-REFERENCE.md), [database design and ER diagrams](docs/DATABASE-DESIGN.md), [end-to-end workflows](docs/WORKFLOWS.md), [integrations and agentic AI design](docs/INTEGRATIONS.md), [security and operations](docs/SECURITY-OPERATIONS.md), [test strategy](docs/TEST-STRATEGY.md) and [phased implementation roadmap](docs/IMPLEMENTATION-PLAN.md).
+
+**Important:** The documentation labels unreleased product capabilities as **Planned / TARGET**. Those descriptions are not implementation or production guarantees.
+
+## Human finance confirmation and collection assertions (pilot)
+
+Investigations now include a separate operator-entered **finance recovery ledger**. After reviewing and approving a finding, a workspace admin may enter a supported confirmation (not greater than the potential discrepancy) and separately record collection reported by the operator (not greater than the confirmation). Entries have a supporting note, stable idempotency key and evidence-version fingerprint; source changes invalidate current confirmations but retain historical entries. The app **does not verify bank receipts, collect cash, issue invoices or provide independent maker-checker approval**. See [API](docs/API.md#operator-entered-recovery-ledger-pilot) and [workflows](docs/WORKFLOWS.md#5-investigation-review-finance-assertion).
+
 ## Standalone repository
 
 The application now lives at [savisaluwadana/RevenueLeak-OS](https://github.com/savisaluwadana/RevenueLeak-OS). See [migration notes](docs/MIGRATION.md), [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), and [security](SECURITY.md).
