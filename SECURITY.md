@@ -55,3 +55,7 @@ The database migrations and RLS isolation tests in `db/` support an **optional s
 ## PostgreSQL private-workspace backups
 
 The manual `backup-workspace` CLI writes an atomically published, no-clobber, mode-`0600` JSON snapshot of a single provisioned PostgreSQL workspace. **It is not encrypted**; exported financial records and saved case evidence are sensitive. Run it only in trusted environments, use an encrypted backup vault and restricted off-site storage, and regularly test restoring into a separate empty organization using the guarded migration CLI. Backups do not replace managed PostgreSQL PITR, retention policies, key management or incident recovery plans. Never share real customer backup files in public PRs or issues.
+
+## Finance assertion security limitation
+
+The pilot recovery ledger records **operator-entered** statements of confirmed discrepancies and reported collections. It enforces CSRF, an existing signed private session, a current finding evidence digest, approved case status, positive bounded minor-unit amounts and retry idempotency. It does not verify funds against a payment provider or bank, link an assertion to an individually authenticated user, require independent second approval or keep its JSON/JSONB storage cryptographically immutable. Do **not** market 'amount recovered' as independently verified. Production requires maker/checker, authenticated user attribution, externally verified receipts, immutable events and security review. See `docs/SECURITY-OPERATIONS.md`.
