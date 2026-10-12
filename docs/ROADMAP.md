@@ -27,6 +27,8 @@
 - [x] Error-returning repository boundary for reads/writes, with server and scheduler failure-injection tests; PostgreSQL runtime adapter follows.
 - [x] Experimental PostgreSQL JSONB workspace adapter with RLS, transactional updates, startup role checks and two-workspace integration tests.
 - [x] Assisted, one-time JSON-pilot to PostgreSQL JSONB import CLI with dry-run, no-overwrite guards, read-back digest and live migration tests.
+- [x] PostgreSQL private-workspace financial backup/export CLI with mode-0600 no-clobber publication, integrity hash and fresh-org recovery test.
+- [ ] Production backup encryption, managed database PITR, scheduled retention, tested recovery targets and independent disaster-recovery review.
 - [ ] Production-normalized relational read/write paths, OIDC membership authorization, data migration and backup/restore drills.
 - [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
 - [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
