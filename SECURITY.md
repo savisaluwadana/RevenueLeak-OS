@@ -51,3 +51,7 @@ The database migrations and RLS isolation tests in `db/` support an **optional s
 ## One-time private-workspace migration security
 
 `cmd/migrate-pilot` defaults to read-only dry-run. Apply mode requires an unprivileged PostgreSQL runtime login and a previously provisioned organization; the source must be a regular, non-symlink JSON file, and the import refuses an initialized target to prevent overwriting existing finance records. Exported digests and source counts are not accounting certification. Run imports offline after backing up both systems; protect snapshot data and console output, avoid credentials in shell history, and never run the command against a shared-customer production environment. See `docs/POSTGRESQL-FOUNDATION.md`.
+
+## PostgreSQL private-workspace backups
+
+The manual `backup-workspace` CLI writes an atomically published, no-clobber, mode-`0600` JSON snapshot of a single provisioned PostgreSQL workspace. **It is not encrypted**; exported financial records and saved case evidence are sensitive. Run it only in trusted environments, use an encrypted backup vault and restricted off-site storage, and regularly test restoring into a separate empty organization using the guarded migration CLI. Backups do not replace managed PostgreSQL PITR, retention policies, key management or incident recovery plans. Never share real customer backup files in public PRs or issues.
