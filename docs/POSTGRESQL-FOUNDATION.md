@@ -54,7 +54,36 @@ TLS mode `require` encrypts transport but does not fully verify server identity.
 
 The server rejects invalid workspace UUIDs, absent organizations, and privileged database logins. It logs **storage type**, not the database DSN. Session-cookie and reverse-proxy security limitations from `SECURITY.md` still apply.
 
-**Existing JSON data is not migrated.** PostgreSQL mode starts with an empty workspace document until records are deliberately imported or entered. Do not point a live instance at the new database and assume existing findings/history have moved.
+**Existing JSON data is not migrated automatically.** PostgreSQL mode starts empty unless you explicitly use the guarded one-time migration command described below. Do not point a live instance at the new database and assume existing findings/history have moved.
+
+## One-time import from an existing JSON pilot
+
+A guarded migration CLI now transfers the existing pilot snapshot to a **previously provisioned, unused** PostgreSQL private workspace. It preserves imported contracts, usage, invoices, credits, mappings, findings, investigation notes, scan sequence, coverage checks and retained run evidence. It does **not** transform the data into the normalized relational tables; the private PostgreSQL adapter continues using `workspace_documents` JSONB.
+
+**Safety procedure:**
+
+1. Stop the original JSON-backed application and any importer/scheduler using it. Do not change the source during migration. Preserve a separate offline backup of the JSON file and a PostgreSQL database backup before any cutover.
+2. Create a fresh, dedicated PostgreSQL organization using the privileged migration account, run `db/migrate.sh`, and provision an unprivileged runtime role following the steps above. Ensure its workspace has never been initialized by the application.
+3. Check the source locally before connecting to the destination:
+
+```bash
+go run ./cmd/migrate-pilot -source ./data/revenueleak.json
+```
+
+4. Review the printed source SHA-256 digest, source record counts, scan sequence and retained history. The dry run does **not** connect to PostgreSQL or write anything.
+5. With `DATABASE_URL` and `WORKSPACE_ID` pointing to the *new, dedicated target* and only after taking backups, perform a one-time import:
+
+```bash
+DATABASE_URL='postgresql://revenueleak_runtime:***@127.0.0.1:5432/revenueleak_dev?sslmode=verify-full' \
+WORKSPACE_ID='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' \
+go run ./cmd/migrate-pilot -source ./data/revenueleak.json -apply
+```
+
+6. The command commits the snapshot in one serializable transaction, independently reads it back and compares a canonical JSON SHA-256 digest. It does **not** delete or modify the source file. Start the private PostgreSQL-backed server only after successful verification and review the historical case list and saved scans.
+
+**Fail-closed behavior:** Import refuses missing/invalid input, symbolic links, unknown JSON fields, multiple JSON documents, duplicate run IDs, excessive history, sources over 64 MiB, unprovisioned workspaces, privileged DB runtime users, or a destination with **any prior committed initialization**. Even a previously initialized workspace that is currently empty cannot be overwritten. Never force the import by manually deleting the target row or bypassing the version check. If a post-commit read-back fails, **stop** and investigate the target before any retry; the import may already have committed. Use your backups and a newly provisioned organization for a clean recovery.
+
+**Limitations:** This is an assisted *one-time private-pilot cutover*, not zero-downtime migration, disaster-recovery validation or a bidirectional synchronization mechanism. The process cannot guarantee that the source was not externally modified after it was read; stop all writers. It preserves the current pilot history cap of 25 runs and inherits the financial-rule limitations described in `README.md`. Do not use it to combine customers or enable shared-tenant hosting.
 
 ## Migration runner and CI guarantees
 
@@ -77,7 +106,7 @@ The JSONB row per organization is intentionally transitional. It retains the pil
 
 ## Next development gates
 
-1. Build normalized, org-scoped repositories for contracts, invoices, usage, mappings, findings and immutable evidence, with a tested one-way migration from JSON pilot snapshots.
+1. Build normalized, org-scoped repositories for contracts, invoices, usage, mappings, findings and immutable evidence. The one-time JSON-to-PostgreSQL JSONB workspace cutover exists, but **JSONB-to-normalized-relational** conversion does not.
 2. Add OIDC logins, membership/RBAC checks and server-level two-organization negative tests for every endpoint (especially exports, investigations and connector configuration).
 3. Add durable ingestion jobs, source checkpointing, idempotent API retries and finance approval guardrails.
 4. Test production-like backup/restore, concurrency, load, PII minimization, monitoring, and an independent security review.
