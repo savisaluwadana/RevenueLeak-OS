@@ -34,6 +34,18 @@ The Go server can now use PostgreSQL for **one provisioned, authenticated privat
 
 **Not production multi-tenancy:** the application still has only one admin password per running server and no OIDC, organization membership authorization, RBAC or routed multi-company sessions. Do not expose multiple unrelated customer organizations behind a shared HTTP instance. Migration from existing JSON pilot data is not automatic.
 
+## Assisted JSON-to-PostgreSQL pilot migration
+
+The new `cmd/migrate-pilot` command supports a **one-time, manually approved import** of a paused local pilot's JSON data into a *fresh*, provisioned private PostgreSQL workspace. It defaults to dry-run, preserves the source and history, refuses to overwrite an initialized workspace, and verifies a post-import SHA-256 fingerprint.
+
+```bash
+go run ./cmd/migrate-pilot -source ./data/revenueleak.json
+# After backups and setting DATABASE_URL + WORKSPACE_ID:
+go run ./cmd/migrate-pilot -source ./data/revenueleak.json -apply
+```
+
+Read the [complete migration and safety procedure](docs/POSTGRESQL-FOUNDATION.md#one-time-import-from-an-existing-json-pilot) **before applying**. This still imports into PostgreSQL **JSONB private-workspace storage**, not the future normalized relational data model, and does not implement production multi-tenancy.
+
 ## PostgreSQL tenant schema (development foundation only)
 
 The repository contains a versioned PostgreSQL schema, a checksum-verified migration runner, and CI tests for row-level security, cross-tenant foreign keys and an opt-in private PostgreSQL repository. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
