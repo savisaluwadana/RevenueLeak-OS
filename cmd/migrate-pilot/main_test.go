@@ -100,7 +100,7 @@ func TestLoadSnapshotRejectsUnsafeOrInvalidSources(t *testing.T) {
 func TestSnapshotRejectsRetentionBeyondExistingLimit(t *testing.T) {
 	d := core.NewDatabase()
 	for i := 0; i < core.MaxSavedScans+1; i++ {
-		d.ScanRuns = append(d.ScanRuns, core.ScanRun{ID: "run_"+strings.Repeat("a", i+1)})
+		d.ScanRuns = append(d.ScanRuns, core.ScanRun{ID: "run_" + strings.Repeat("a", i+1)})
 	}
 	data, err := json.Marshal(d)
 	if err != nil {
