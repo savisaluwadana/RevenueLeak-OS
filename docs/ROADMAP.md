@@ -26,6 +26,7 @@
 - [x] Correct scheduled-scan fingerprint to include customer ID mapping changes.
 - [x] Error-returning repository boundary for reads/writes, with server and scheduler failure-injection tests; PostgreSQL runtime adapter follows.
 - [x] Experimental PostgreSQL JSONB workspace adapter with RLS, transactional updates, startup role checks and two-workspace integration tests.
+- [x] Assisted, one-time JSON-pilot to PostgreSQL JSONB import CLI with dry-run, no-overwrite guards, read-back digest and live migration tests.
 - [ ] Production-normalized relational read/write paths, OIDC membership authorization, data migration and backup/restore drills.
 - [ ] Mapping approvals, multi-tenant organization-level segregation, provider ID verification and collision reviews.
 - [ ] Durable distributed scheduling, scheduled connector ingest, alerts and retries for production.
