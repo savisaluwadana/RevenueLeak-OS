@@ -95,7 +95,7 @@ func TestPostgreSQLNonexistentOrganizationFailsClosed(t *testing.T) {
 	if dsn == "" {
 		t.Skip("POSTGRES_TEST_URL is not set")
 	}
-	_, err := Open(dsn, "cccccccc-cccc-4ccc-8ccc-cccccccccccc")
+	_, err := Open(dsn, "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee")
 	if err == nil || !strings.Contains(err.Error(), "workspace has not been provisioned") {
 		t.Fatalf("missing organization should be rejected, got %v", err)
 	}
