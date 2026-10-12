@@ -25,6 +25,7 @@ func TestImportEmptyWorkspacePreservesCompleteSnapshotAndRejectsOverwrite(t *tes
 	original.ScanSequence = 17
 	original.ScanRuns = []core.ScanRun{{ID: "scan_00000017", RuleVersion: core.RuleVersion, SourceDigest: "fake-source-digest-for-fixture", Trigger: "manual", Summary: core.ScanSummary{RunID: "scan_00000017", Findings: 1}}}
 	original.LastScan = core.ScanSummary{RunID: "scan_00000017", Findings: 1}
+	original.Recoveries = []core.RecoveryEntry{{ID: "rec_1", FindingID: "leak_1", CustomerID: "c1", Currency: "USD", Action: "confirmed", EvidenceDigest: "example-source-fingerprint", AmountCents: 500, Note: "Finance review preserved during migration", At: "2026-09-24T15:16:17Z"}}
 	original.UpdatedAt = "2026-09-24T15:16:17Z"
 
 	if err := s.ImportEmptyWorkspace(original); err != nil {
