@@ -131,6 +131,8 @@ func (s *Server) Router() http.Handler {
 	mux.HandleFunc("POST /api/logout", s.logout)
 	mux.HandleFunc("GET /api/overview", s.overview)
 	mux.HandleFunc("GET /api/findings", s.findings)
+	mux.HandleFunc("GET /api/recoveries", s.recoveries)
+	mux.HandleFunc("POST /api/findings/{id}/recovery", s.recordRecovery)
 	mux.HandleFunc("GET /api/coverage", s.coverage)
 	mux.HandleFunc("GET /api/scans", s.scanRuns)
 	mux.HandleFunc("GET /api/scans/{id}", s.scanRun)
