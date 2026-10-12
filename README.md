@@ -34,6 +34,16 @@ The Go server can now use PostgreSQL for **one provisioned, authenticated privat
 
 **Not production multi-tenancy:** the application still has only one admin password per running server and no OIDC, organization membership authorization, RBAC or routed multi-company sessions. Do not expose multiple unrelated customer organizations behind a shared HTTP instance. Migration from existing JSON pilot data is not automatic.
 
+## Private PostgreSQL workspace backup and recovery drill
+
+Export an authenticated, provisioned private PostgreSQL workspace to a **new** mode-`0600` JSON file without overwriting existing backups:
+
+```bash
+go run ./cmd/backup-workspace -output /secure/backups/revenueleak-2026-10-12.json
+```
+
+The backup includes sensitive financial records. Encrypt and retain it safely, and test restoring it into a **different, empty** organization using `cmd/migrate-pilot`. [Backup and recovery instructions](docs/POSTGRESQL-FOUNDATION.md#private-workspace-backup-and-test-restore). This is not automated whole-database backup, WAL/PITR or production disaster-recovery certification.
+
 ## Assisted JSON-to-PostgreSQL pilot migration
 
 The new `cmd/migrate-pilot` command supports a **one-time, manually approved import** of a paused local pilot's JSON data into a *fresh*, provisioned private PostgreSQL workspace. It defaults to dry-run, preserves the source and history, refuses to overwrite an initialized workspace, and verifies a post-import SHA-256 fingerprint.
