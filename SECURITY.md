@@ -47,3 +47,7 @@ Saved runs duplicate customer contracts and financial inputs in the private JSON
 ## PostgreSQL foundation security boundary
 
 The database migrations and RLS isolation tests in `db/` support an **optional single-private-workspace adapter**; they do not protect the default JSON-backed demo and do not implement per-user tenant authorization. PostgreSQL mode rejects schema owners, superusers and `BYPASSRLS` roles, and scopes queries with an environment-configured organization UUID. A future multi-tenant service must instead derive this value from a verified organization membership. Custom PostgreSQL session settings are not themselves authentication; SQL injection and broad grants remain threats. See [PostgreSQL foundation](docs/POSTGRESQL-FOUNDATION.md).
+
+## One-time private-workspace migration security
+
+`cmd/migrate-pilot` defaults to read-only dry-run. Apply mode requires an unprivileged PostgreSQL runtime login and a previously provisioned organization; the source must be a regular, non-symlink JSON file, and the import refuses an initialized target to prevent overwriting existing finance records. Exported digests and source counts are not accounting certification. Run imports offline after backing up both systems; protect snapshot data and console output, avoid credentials in shell history, and never run the command against a shared-customer production environment. See `docs/POSTGRESQL-FOUNDATION.md`.
