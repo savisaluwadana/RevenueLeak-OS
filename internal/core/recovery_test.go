@@ -112,3 +112,33 @@ func TestRecoveryEvidenceRevisionExpiresConfirmationButNotRecordedCollection(t *
 		t.Fatal("new evidence replaced historic recovery events")
 	}
 }
+
+func TestRecoverySurvivesJSONRestart(t *testing.T) {
+	path := t.TempDir() + "/workspace.json"
+	store, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var entry RecoveryEntry
+	if err := store.Update(func(d *Database) error {
+		*d = base()
+		RunScan(d, timeAt("2026-10-08"), 7, "migration")
+		d.Findings[0].Status = "approved"
+		var e error
+		entry, e = RecordRecovery(d, d.Findings[0].ID, recoveryInput(d.Findings[0], "persist-case-0001", "confirmed", 250), timeAt("2026-10-09"))
+		return e
+	}); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, err := reopened.Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(saved.Recoveries) != 1 || saved.Recoveries[0].ID != entry.ID || saved.Recoveries[0].AmountCents != 250 {
+		t.Fatalf("lost recovery record on restart: %+v", saved.Recoveries)
+	}
+}
