@@ -85,6 +85,18 @@ func TestRecoveryRequiresFreshApprovedEvidence(t *testing.T) {
 	}
 }
 
+func TestRevokedCaseApprovalCannotCountCurrentConfirmation(t *testing.T) {
+	d, f := recoveryFixture(t)
+	if _, err := RecordRecovery(&d, f.ID, recoveryInput(f, "revoke-case-0001", "confirmed", 200), timeAt("2026-10-09")); err != nil {
+		t.Fatal(err)
+	}
+	d.Findings[0].Status = "false_positive"
+	totals := RecoveryTotals(d)["USD"]
+	if totals.ConfirmedCurrentCents != 0 || totals.NeedsReviewCount != 1 {
+		t.Fatalf("revoked review still treated as current confirmation: %+v", totals)
+	}
+}
+
 func TestRecoveryEvidenceRevisionExpiresConfirmationButNotRecordedCollection(t *testing.T) {
 	d, f := recoveryFixture(t)
 	now := timeAt("2026-10-09")
