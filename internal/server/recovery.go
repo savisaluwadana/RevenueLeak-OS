@@ -21,9 +21,9 @@ func (s *Server) recoveries(w http.ResponseWriter, r *http.Request) {
 	// These totals reflect operator-entered assertions, NOT bank or provider
 	// verification. Current confirmations are evidence-version scoped.
 	respond(w, http.StatusOK, map[string]any{
-		"events": events,
+		"events":             events,
 		"totals_by_currency": core.RecoveryTotals(d),
-		"disclaimer": "Operator-entered records only. Confirmed does not mean collectible and collected has not been independently verified.",
+		"disclaimer":         "Operator-entered records only. Confirmed does not mean collectible and collected has not been independently verified.",
 	})
 }
 
@@ -51,7 +51,7 @@ func (s *Server) recordRecovery(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, "Unable to save recovery record")
 	default:
 		respond(w, http.StatusOK, map[string]any{
-			"entry": event,
+			"entry":      event,
 			"disclaimer": "Recorded by an operator; no money transfer or independent financial verification has occurred.",
 		})
 	}
