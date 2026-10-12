@@ -15,6 +15,8 @@ The JSON API is same-origin. Private workspaces require the signed `rl_session` 
 | GET | /api/findings/export | Current findings CSV |
 | POST | /api/stripe/sync | Read-only invoice sync and saved scan |
 | POST | /api/demo/reset | Destructive reset, demo mode only |
+| GET | /api/recoveries | Operator-entered finance assertions, separate current-evidence confirmations and recorded collections |
+| POST | /api/findings/{id}/recovery | Idempotent finance confirmation / collection assertion; never transfers money |
 | GET | /api/coverage | `{gaps: [...]}`; source coverage warnings only (no monetary totals) |
 | GET | /api/scans | `{runs: [...], retention_limit: 25}`; summaries only |
 | GET | /api/scans/{id} | `{run: {...}}`; recorded sources and results |
