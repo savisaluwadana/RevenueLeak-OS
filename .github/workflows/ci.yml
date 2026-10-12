@@ -81,6 +81,9 @@ jobs:
             -c "GRANT EXECUTE ON FUNCTION revenueleak.current_organization() TO revenueleak_go_ci;" \
             -c "GRANT SELECT ON revenueleak.organizations TO revenueleak_go_ci;" \
             -c "GRANT SELECT, INSERT, UPDATE ON revenueleak.workspace_documents TO revenueleak_go_ci;"
+          docker exec revenueleak-postgres-ci psql -X -v ON_ERROR_STOP=1 \
+            -U postgres -d revenueleak_ci \
+            -c "INSERT INTO revenueleak.organizations (id,slug,display_name) VALUES ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','migration-import-ci','Import test'),('dddddddd-dddd-4ddd-8ddd-dddddddddddd','migration-existing-ci','Initialized test');"
           POSTGRES_TEST_URL='postgresql://revenueleak_go_ci:local-ci-only@127.0.0.1:5433/revenueleak_ci?sslmode=disable' \
             go test -race -tags=postgres_integration ./internal/pgstore
           docker exec revenueleak-postgres-ci sh -c \
